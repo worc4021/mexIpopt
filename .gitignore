@@ -31,3 +31,7 @@
 *.out
 *.app
 *.mex*
+
+
+# Mac directory files
+.DS_Store

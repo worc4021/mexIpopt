@@ -1,20 +1,48 @@
 # Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+1. Build coin-hsl library
+1. Build the mkl blas and lapack libraries.
+1. Build ipopt as a library
+1. Generate mex interface.
+1. Done
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+# Build COIN-HSL solver
+Run 
+```
+./configure --prefix=${binFolder} CC=/usr/bin/xcrun gcc CXX=/usr/bin/xcrun g++ F77=/usr/bin/xcrun gfortran
+```
+in the coinhsl-archive-2014.01.17 directoy to set up all relevant make files etc. 
+Then run 
+```
+make -j8
+make install
+```
+Now there should be a coinhsl library and archive in the prefix directory.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+# Build BLAS and LAPACK
+Run 
+```
+make libuni export=blas_example_list name=libblas
+make libuni export=lapack_example_list name=liblapack
+mv *.dylib ${binFolder}
+```
+This creates MKL exports for us to link against.
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+# Build Ipopt
+Get the release you want from the Ipopt repo. Then run
+```
+./configure --prefix=${binFolder} --with-hsl-cflags="-I${binFolder}/include" --with-hsl-lflags="-L${binFolder}/lib -lcoinhsl" --with-lapack="-L${binFolder}/lib -llapack" CC="/usr/bin/xcrun gcc" CXX="/usr/bin/xcrun g++" F77="/usr/bin/xcrun gfortran" --disable-linear-solver-loader
+```
+The linear solver loader for some reason does only work when we have access to all HSL solvers, since we don't we turn it off.
+
+Presumably, there is some left over garbage in the compiler paths pointing to no longer existing fortran runtimes. I was not able to fix this. So I ended up simply modifying the make files. Soz.
+
+The run 
+```
+make -j8
+make install
+```
+done.
+
+# Build mex interface
+Run the make file in the repository.
