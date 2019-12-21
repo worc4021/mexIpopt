@@ -8,9 +8,9 @@
 # Build COIN-HSL solver
 Run 
 ```
-./configure --prefix=${binFolder} CC=/usr/bin/xcrun gcc CXX=/usr/bin/xcrun g++ F77=/usr/bin/xcrun gfortran
+./configure --prefix=${binFolder}
 ```
-in the coinhsl-archive-2014.01.17 directoy to set up all relevant make files etc. 
+in the coinhsl repo to set up all relevant make files etc. 
 Then run 
 ```
 make -j8
