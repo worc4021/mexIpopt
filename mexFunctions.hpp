@@ -50,6 +50,14 @@ inline bool isnumeric(const Array& x){
     return retVal;
 }
 
+inline bool ishandle(const Array& x) {
+    return ( ArrayType::HANDLE_OBJECT_REF == x.getType() );
+}
+
+inline bool issparse(const Array& x) {
+    return ( ArrayType::SPARSE_DOUBLE == x.getType() );
+}
+
 std::string getStringValue(const Array& x) {
     if ( ArrayType::CHAR == x.getType() ) {
         CharArray retVal(std::move(x));
@@ -59,4 +67,17 @@ std::string getStringValue(const Array& x) {
         return retVal[0];
     }
     return std::string("");
+}
+
+void displayError(  std::shared_ptr<matlab::engine::MATLABEngine>& matlabPtr,
+                    ArrayFactory& factory,
+                    std::string& message )
+                    {
+        matlabPtr->feval(
+                        matlab::engine::convertUTF8StringToUTF16String("error"),
+                        0, 
+                        std::vector<Array>({
+                            factory.createScalar(message)
+                            })
+                        );
 }
