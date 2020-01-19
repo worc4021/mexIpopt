@@ -31,7 +31,7 @@ This creates MKL exports for us to link against.
 # Build Ipopt
 Get the release you want from the Ipopt repo. Then run
 ```
-./configure --prefix=${binFolder} --with-hsl-cflags="-I${binFolder}/include" --with-hsl-lflags="-L${binFolder}/lib -lcoinhsl" --with-lapack="-L${binFolder}/lib -llapack" CC="/usr/bin/xcrun gcc" CXX="/usr/bin/xcrun g++" F77="/usr/bin/xcrun gfortran" --disable-linear-solver-loader
+./configure --prefix=${binFolder} --with-hsl-cflags="-I${binFolder}/include" --with-hsl-lflags="-L${binFolder}/lib -lcoinhsl" --with-lapack="-L${binFolder}/lib -llapack" CC="/usr/bin/xcrun gcc" CXX="/usr/bin/xcrun g++" F77="/usr/bin/xcrun gfortran" --disable-linear-solver-loader --disable-sipopt --disable-java
 ```
 The linear solver loader for some reason does only work when we have access to all HSL solvers, since we don't we turn it off.
 
