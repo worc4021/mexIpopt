@@ -1,20 +1,6 @@
-// #include <eigen3/Eigen/Core>
-
-// using namespace Eigen;
-// // autodiff include
-// #include <autodiff/forward.hpp>
-// #include <autodiff/forward/eigen.hpp>
-// using namespace autodiff;
-
-
-#include "mex.hpp"
-#include "mexAdapter.hpp"
+#include "mexFunctions.hpp"
 #include "stream.hpp"
 #include "nlp.hpp"
-
-
-using namespace matlab::data;
-using matlab::mex::ArgumentList;
 
 typedef matlab::data::Array mexArray;
 
@@ -35,53 +21,6 @@ private:
                         );
     }
 
-    bool isfield(StructArray& s, std::string fieldname){
-        bool retVal = true;
-        try {
-            s[0][fieldname].getType();
-        }
-        catch(const matlab::data::InvalidFieldNameException& e)
-        {
-            retVal = false;
-        }
-        return retVal;
-    }
-
-    inline bool isscalar(const Array& x){
-        return (1 == x.getNumberOfElements());
-    }
-
-    inline bool iswholenumber(double x){
-        return (0. == x-std::floor(x));
-    }
-
-    bool isinteger(const Array& x){
-        TypedArray<double> y(x);
-        bool retVal = true;
-        for (auto& elem : y)
-            retVal &= iswholenumber(elem);
-        return retVal;
-    }
-
-    bool isscalarinteger(const Array& x){
-        TypedArray<double> y(x);
-        return (isinteger(y) && isscalar(y));
-    }
-
-    inline bool isstring(const Array& x){
-        return (ArrayType::CHAR == x.getType());
-    }
-
-    inline bool isstringtype(const Array& x){
-        return (ArrayType::MATLAB_STRING == x.getType());
-    }
-
-    inline bool isnumeric(const Array& x){
-        bool retVal = false;
-        for (int i = 3; i < 23; i++)
-            retVal |= (ArrayType(i) == x.getType());
-        return retVal;
-    }
 
     void setSingleOption(SmartPtr<IpoptApplication> app, std::string name, const Array& option){
         if (isnumeric(option)){
@@ -91,9 +30,8 @@ private:
             } else {
                 app->Options()->SetNumericValue(name, opt[0]);
             }
-        } else if (isstring(option)) {
-            CharArray charopt(std::move(option));
-            app->Options()->SetStringValue(name, charopt.toAscii());
+        } else if ( isstring(option) ) {
+            app->Options()->SetStringValue(name, getStringValue(option));
         }
 
     }

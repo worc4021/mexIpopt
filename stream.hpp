@@ -14,7 +14,7 @@ public:
         matlabPtr = mptr;
     }
     int sync() {
-        matlabPtr->feval(   matlab::engine::convertUTF8StringToUTF16String("fprintf"),
+        matlabPtr->fevalAsync(   matlab::engine::convertUTF8StringToUTF16String("fprintf"),
                             0,
                             std::vector<matlab::data::Array>({
                                     factory.createScalar(this->str())

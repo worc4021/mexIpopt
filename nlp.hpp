@@ -1,4 +1,5 @@
 #pragma once
+#include "mexFunctions.hpp"
 #include "stream.hpp"
 #include "IpTNLP.hpp"
 #include "IpIpoptApplication.hpp"
@@ -209,9 +210,18 @@ public:
 
         if (isfield(options, "ipopt")){
             StructArray ipoptStr = options[0]["ipopt"];
-            if (isfield(ipoptStr, "hessian_approximation")){ 
-                CharArray hessianApprox = ipoptStr[0]["hessian_approximation"];
-                returnHessian = (0 != hessianApprox.toAscii().compare("limited-memory"));
+            if (isfield(ipoptStr, "hessian_approximation")){
+                if (isstring(ipoptStr[0]["hessian_approximation"])  ) {
+                    returnHessian = (0 != getStringValue(ipoptStr[0]["hessian_approximation"]).compare("limited-memory"));
+                } else {
+                    matlabPtr->feval(
+                        matlab::engine::convertUTF8StringToUTF16String("error"),
+                        0, 
+                        std::vector<matlab::data::Array>({
+                            factory.createScalar("hessian_approximation must be either char or string")
+                            })
+                        );
+                }
             }
         }
 
