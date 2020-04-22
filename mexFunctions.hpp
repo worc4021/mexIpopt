@@ -39,6 +39,11 @@ bool isscalarinteger(const Array& x){
     return (isinteger(y) && isscalar(y));
 }
 
+bool ispositive(const Array& x) {
+    TypedArray<double> y(x);
+    return 0 < y[0];
+}
+
 inline bool isstring(const Array& x){
     return ( (ArrayType::CHAR == x.getType()) || (ArrayType::MATLAB_STRING == x.getType()) );
 }

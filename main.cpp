@@ -82,7 +82,7 @@ public:
 
         if (isfield(opts, "ipopt") && (ArrayType::STRUCT == opts[0]["ipopt"].getType()) ) {
             StructArray ipoptopts = opts[0]["ipopt"];
-            if (isfield(ipoptopts, "print_level") && isscalarinteger(ipoptopts[0]["print_level"]))
+            if (isfield(ipoptopts, "print_level") && isscalarinteger(ipoptopts[0]["print_level"]) && ispositive(ipoptopts[0]["print_level"]))
             {
                 TypedArray<double> plTemp = ipoptopts[0]["print_level"];
                 int pl(static_cast<int>(plTemp[0]));
@@ -102,12 +102,12 @@ public:
         // Ask Ipopt to solve the problem
         status = app->OptimizeTNLP(mynlp);
 
-        if (status == Solve_Succeeded) {
-            cout << std::endl << std::endl << "*** The problem solved!" << std::endl;
-        }
-        else {
-            cout << std::endl << std::endl << "*** The problem FAILED!" << std::endl;
-        }
+        // if (status == Solve_Succeeded) {
+        //     cout << std::endl << std::endl << "*** The problem solved!" << std::endl;
+        // }
+        // else {
+        //     cout << std::endl << std::endl << "*** The problem FAILED!" << std::endl;
+        // }
 
         if (outputs.size() > 0)
             outputs[0] = mynlp->getX();

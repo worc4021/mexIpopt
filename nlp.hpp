@@ -416,16 +416,16 @@ public:
             int i;
             assert(!returnHessian);
             if (nullptr == values){
-            Array hessianStructure = funcs[0]["hessianstructure"];
-            std::vector<Array> args(0);
-            std::vector<Array> hesStrOut = feval(hessianStructure, 1, args);
-            SparseArray<double> HessianStr(std::move(hesStrOut[0]));
-            i = 0;
-            for (TypedIterator<double> it = HessianStr.begin(); it != HessianStr.end(); it++){
-                iRow[i] = HessianStr.getIndex(it).first;
-                jCol[i] = HessianStr.getIndex(it).second;
-                i++;
-            }
+                Array hessianStructure = funcs[0]["hessianstructure"];
+                std::vector<Array> args(0);
+                std::vector<Array> hesStrOut = feval(hessianStructure, 1, args);
+                SparseArray<double> HessianStr(std::move(hesStrOut[0]));
+                i = 0;
+                for (TypedIterator<double> it = HessianStr.begin(); it != HessianStr.end(); it++){
+                    iRow[i] = HessianStr.getIndex(it).first;
+                    jCol[i] = HessianStr.getIndex(it).second;
+                    i++;
+                }
             } else {
             if (new_x) 
                 updateX(x);
