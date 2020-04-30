@@ -112,8 +112,11 @@ public:
         if (outputs.size() > 0)
             outputs[0] = mynlp->getX();
 
-        if (outputs.size() > 1)
-            outputs[1] = mynlp->getInfo();
+        if (outputs.size() > 1) {
+            StructArray info = mynlp->getInfo();
+            info[0]["infoStatus"] = factory.createScalar<int>(status);
+            outputs[1] = std::move(info);
+        }
 
     }
 };

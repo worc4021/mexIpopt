@@ -12,24 +12,26 @@
 %         September 18, 2008
 clear;
 
-    x0         = [1 5 5 1];  % The starting point.
+    x0         = [3 3 3 3];  % The starting point.
     options.lb = [1 1 1 1];  % Lower bound on the variables.
     options.ub = [5 5 5 5];  % Upper bound on the variables.
     options.cl = [25  40];   % Lower bounds on the constraint functions.
     options.cu = [inf 40];   % Upper bounds on the constraint functions.
     
     % Initialize the dual point.
-    options.zl     = [1 1 1 1];
-    options.zu     = [1 1 1 1];
-    options.lambda = [1 1];
+%     options.zl     = [1 1 1 1];
+%     options.zu     = [1 1 1 1];
+%     options.lambda = [1 1];
+
     
     % Set the IPOPT options.
     options.ipopt.tol                               = 1e-7;
     options.ipopt.max_iter                          = 25;
     options.ipopt.mu_strategy                       = "adaptive";
     options.ipopt.linear_solver                     = "ma27";
-    options.ipopt.output_file                       = "ipopt-damped4.out";
-    options.ipopt.print_level                       = 5;
+    options.ipopt.output_file                       = "ipopt.out";
+    options.ipopt.file_print_level                  = 5;
+    options.ipopt.print_level                       = 0;
     options.ipopt.hessian_approximation             = "limited-memory";
     options.ipopt.limited_memory_update_type        = "damped-bfgs";
     options.ipopt.limited_memory_damping_threshold  = 0.15;
@@ -59,7 +61,7 @@ clear;
   c = [ prod(x); sum(x.^2) ];
   end
 
-  function b = intermediate(x)
+  function b = intermediate(~)
 %     fprintf('iteration %d\n',x.iter);
     b = true;
   end

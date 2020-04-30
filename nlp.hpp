@@ -556,12 +556,12 @@ public:
 
         updateX(x);
 
-        retStr = factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status"});
+        retStr = factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "solverStatus", "infoStatus"});
         retStr[0]["z_L"] = factory.createArray<double>({static_cast<size_t>(n),1});
         retStr[0]["z_U"] = factory.createArray<double>({static_cast<size_t>(n),1});
         retStr[0]["lambda"] = factory.createArray<double>({static_cast<size_t>(m),1});
         
-        retStr[0]["status"] = factory.createCharArray(getStatus(status));
+        retStr[0]["solverStatus"] = factory.createCharArray(getStatus(status));
         TypedArrayRef<double> zL = retStr[0]["z_L"];
         for (auto i = 0; i < n; i++)
             zL[i] = z_L[i];
