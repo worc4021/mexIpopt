@@ -4,6 +4,25 @@
 
 typedef matlab::data::Array mexArray;
 
+struct evals {
+    int objective;
+    int constraints;
+    int gradient;
+    int jacobian;
+    int hessian;
+};
+
+struct MatlabInfo {
+    std::unique_ptr<Ipopt::Number[]> x;
+    int status;
+    std::unique_ptr<Ipopt::Number[]> zl;
+    std::unique_ptr<Ipopt::Number[]> zu;
+    std::unique_ptr<Ipopt::Number[]> lambda;
+    int iter;
+    Ipopt::Number cpu;
+    Ipopt::Number objective;
+    evals eval;
+};
 
 class MexFunction : public matlab::mex::Function {
 private:
@@ -93,7 +112,9 @@ public:
         }
 
 
-        ApplicationReturnStatus status;
+        MatlabInfo infoStruct;
+
+        Ipopt::ApplicationReturnStatus status;
         status = app->Initialize();
         if (status != Solve_Succeeded) {
             cout << std::endl << std::endl << "*** Error during initialization!" << std::endl;
@@ -102,19 +123,35 @@ public:
         // Ask Ipopt to solve the problem
         status = app->OptimizeTNLP(mynlp);
 
-        // if (status == Solve_Succeeded) {
-        //     cout << std::endl << std::endl << "*** The problem solved!" << std::endl;
-        // }
-        // else {
-        //     cout << std::endl << std::endl << "*** The problem FAILED!" << std::endl;
-        // }
-
         if (outputs.size() > 0)
             outputs[0] = mynlp->getX();
 
         if (outputs.size() > 1) {
             StructArray info = mynlp->getInfo();
-            info[0]["infoStatus"] = factory.createScalar<int>(status);
+            info[0]["status"] = factory.createScalar<int>(status);
+            StructArrayRef evals = info[0]["eval"];
+
+            if (Ipopt::IsValid(app->Statistics())) {
+                TypedArrayRef<double> objective = info[0]["objective"];
+                objective[0] = app->Statistics()->FinalObjective();
+                TypedArrayRef<double> cpu = info[0]["cpu"];
+                cpu[0] = app->Statistics()->TotalCpuTime();
+                TypedArrayRef<int> iter = info[0]["iter"];
+                iter[0] = app->Statistics()->IterationCount();
+                TypedArrayRef<int> objectiveCalls = evals[0]["objective"];
+                TypedArrayRef<int> constraintCalls = evals[0]["constraints"];
+                TypedArrayRef<int> gradientCalls = evals[0]["gradient"];
+                TypedArrayRef<int> jacobianCalls = evals[0]["jacobian"];
+                TypedArrayRef<int> hessianCalls = evals[0]["hessian"];
+                app->Statistics()->NumberOfEvaluations( objectiveCalls[0],
+                                                        constraintCalls[0],
+                                                        gradientCalls[0],
+                                                        jacobianCalls[0],
+                                                        hessianCalls[0]
+                                                );
+            }
+
+
             outputs[1] = std::move(info);
         }
 

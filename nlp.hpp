@@ -8,13 +8,13 @@
 #include "IpTNLPAdapter.hpp"
 #include "IpOrigIpoptNLP.hpp"
 #include "IpJournalist.hpp"
+#include "IpSolveStatistics.hpp"
 #include "mex.hpp"
 #include "mexAdapter.hpp"
 #include <algorithm>
 #include <memory>
 
 using namespace Ipopt;
-
 
 class MatlabJournal : 
     public Journal 
@@ -177,10 +177,21 @@ public:
     myNLP() : isinitialised(false), returnHessian(true), intermediateCallback(false),
         funcs(factory.createStructArray({0,0},{})),
         options(factory.createStructArray({0,0},{})),
-        retStr(factory.createStructArray({0,0},{})),
+        retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval"})), // Make sure the structure is always available
         stream(&buffer), 
         args({factory.createEmptyArray()}) 
-    {};
+    {
+        retStr[0]["eval"] = factory.createStructArray({1,1},{"objective","constraints","gradient","jacobian","hessian"});
+        StructArrayRef evals = retStr[0]["eval"];
+        evals[0]["objective"] = factory.createScalar<int>(0);
+        evals[0]["constraints"] = factory.createScalar<int>(0);
+        evals[0]["gradient"] = factory.createScalar<int>(0);
+        evals[0]["jacobian"] = factory.createScalar<int>(0);
+        evals[0]["hessian"] = factory.createScalar<int>(0);
+        retStr[0]["iter"] = factory.createScalar<int>(0);
+        retStr[0]["cpu"] = factory.createScalar<double>(0.);
+        retStr[0]["objective"] = factory.createScalar<double>(NAN);
+    };
 
     TypedArray<double> getX(void) {
         return args[0];
@@ -237,7 +248,6 @@ public:
   bool get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
                     Index& nnz_h_lag, IndexStyleEnum& index_style) 
     {
-    
         index_style = C_STYLE;
         n = args[0].getNumberOfElements();
         _n = n;
@@ -245,6 +255,12 @@ public:
         TypedArray<double> cu = options[0]["cu"];
         m = cu.getNumberOfElements();
         _m = m;
+        
+        // Initialise return arrays in case things fail.
+        retStr[0]["z_L"] = factory.createArray<double>({static_cast<size_t>(n),1});
+        retStr[0]["z_U"] = factory.createArray<double>({static_cast<size_t>(n),1});
+        retStr[0]["lambda"] = factory.createArray<double>({static_cast<size_t>(m),1});
+        
 
         std::vector<Array> nullArgs = {};
 
@@ -275,7 +291,6 @@ public:
   bool get_bounds_info(Index n, Number* x_l, Number* x_u,
                 Index m, Number* g_l, Number* g_u) 
     {
-                                   
         TypedArray<double> xl = std::move(options[0]["lb"]);
         TypedArray<double> xu = std::move(options[0]["ub"]);
         TypedArray<double> gl = std::move(options[0]["cl"]);
@@ -326,7 +341,6 @@ public:
 
   /** Method to return the objective value */
   bool eval_f(Index n, const Number* x, bool new_x, Number& obj_value){
-
     if (new_x) 
         updateX(x);
 
@@ -373,7 +387,7 @@ public:
                 Index m, Index nele_jac, Index* iRow, Index *jCol,
                 Number* values) 
         {
-            int i;
+
             if (nullptr == values){
                 Array jacobianStructure = funcs[0]["jacobianstructure"];
                 std::vector<Array> args(0);
@@ -381,7 +395,7 @@ public:
 
                 SparseArray<double> JacobianStr(std::move(jacStrOut[0]));
 
-                i = 0;
+                auto i = 0;
                 for (TypedIterator<double> it = JacobianStr.begin(); it != JacobianStr.end(); it++){
                     iRow[i] = JacobianStr.getIndex(it).first;
                     jCol[i] = JacobianStr.getIndex(it).second;
@@ -393,14 +407,13 @@ public:
                 if (new_x) 
                     updateX(x);
 
-                SparseArray<double> Jacobian = fevalWithX(funcs[0]["jacobian"]);;
-                i = 0;
-                for (auto elem : Jacobian){
+                SparseArray<double> Jacobian = fevalWithX(funcs[0]["jacobian"]);
+                auto i = 0;
+                for (auto& elem : Jacobian){
                     values[i] = elem;
                     i++;
                 }
             }
-
             return true;
         };
 
@@ -413,37 +426,36 @@ public:
                       bool new_lambda, Index nele_hess, Index* iRow,
                       Index* jCol, Number* values) 
         {
-            int i;
-            assert(!returnHessian);
+
             if (nullptr == values){
                 Array hessianStructure = funcs[0]["hessianstructure"];
                 std::vector<Array> args(0);
                 std::vector<Array> hesStrOut = feval(hessianStructure, 1, args);
                 SparseArray<double> HessianStr(std::move(hesStrOut[0]));
-                i = 0;
+                auto i = 0;
                 for (TypedIterator<double> it = HessianStr.begin(); it != HessianStr.end(); it++){
                     iRow[i] = HessianStr.getIndex(it).first;
                     jCol[i] = HessianStr.getIndex(it).second;
                     i++;
                 }
             } else {
-            if (new_x) 
-                updateX(x);
+                if (new_x) 
+                    updateX(x);
 
-            std::vector<Array> hessianArgs = {
-                args[0], 
-                factory.createScalar(obj_factor), 
-                factory.createArray<double>({static_cast<size_t>(m),1}, lambda, lambda + m)
-            };
+                std::vector<Array> hessianArgs = {
+                    args[0], 
+                    factory.createScalar(obj_factor), 
+                    factory.createArray<double>({static_cast<size_t>(m),1}, lambda, lambda + m)
+                };
 
 
-            std::vector<Array> retVals = feval(funcs[0]["hessian"], 1, hessianArgs);
-            SparseArray<double> Hessian = std::move(retVals[0]);
-            i = 0;
-            for (auto elem : Hessian){
-                values[i] = elem;
-                i++;
-            }
+                std::vector<Array> retVals = feval(funcs[0]["hessian"], 1, hessianArgs);
+                SparseArray<double> Hessian = std::move(retVals[0]);
+                auto i = 0;
+                for (auto& elem : Hessian){
+                    values[i] = elem;
+                    i++;
+                }
             }
             return true;
         };
@@ -556,12 +568,6 @@ public:
 
         updateX(x);
 
-        retStr = factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "solverStatus", "infoStatus"});
-        retStr[0]["z_L"] = factory.createArray<double>({static_cast<size_t>(n),1});
-        retStr[0]["z_U"] = factory.createArray<double>({static_cast<size_t>(n),1});
-        retStr[0]["lambda"] = factory.createArray<double>({static_cast<size_t>(m),1});
-        
-        retStr[0]["solverStatus"] = factory.createCharArray(getStatus(status));
         TypedArrayRef<double> zL = retStr[0]["z_L"];
         for (auto i = 0; i < n; i++)
             zL[i] = z_L[i];
