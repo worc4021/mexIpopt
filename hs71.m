@@ -31,11 +31,14 @@ clear;
     options.ipopt.linear_solver                     = "ma27";
     options.ipopt.output_file                       = "ipopt.out";
     options.ipopt.file_print_level                  = 5;
-    options.ipopt.print_level                       = 0;
-    options.ipopt.hessian_approximation             = "limited-memory";
+    options.ipopt.print_level                       = 5;
+    options.ipopt.hessian_approximation             = "exact";%"limited-memory";
     options.ipopt.limited_memory_update_type        = "damped-bfgs";
-    options.ipopt.limited_memory_damping_threshold  = 0.15;
+    options.ipopt.limited_memory_damping_threshold  = 0.2;
 %     options.ipopt.print_options_documentation       = "yes";
+    options.ipopt.dependency_detector               = "mumps";
+    options.ipopt.print_user_options                = "yes";
+%     options.debug = 1;
     
     % The callback functions.
     funcs.objective         = @(x) x(1)*x(4)*sum(x(1:3)) + x(3);
@@ -61,7 +64,7 @@ clear;
   c = [ prod(x); sum(x.^2) ];
   end
 
-  function b = intermediate(~)
+  function b = intermediate(intermediateCallbackStructure)
 %     fprintf('iteration %d\n',x.iter);
     b = true;
   end

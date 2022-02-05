@@ -85,6 +85,7 @@ private:
     bool isinitialised;
     bool returnHessian;
     bool intermediateCallback;
+    bool diagnosticPrintout;
     Buffer buffer;
     std::ostream stream;
 
@@ -179,7 +180,8 @@ public:
         options(factory.createStructArray({0,0},{})),
         retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval"})), // Make sure the structure is always available
         stream(&buffer), 
-        args({factory.createEmptyArray()}) 
+        args({factory.createEmptyArray()}),
+        diagnosticPrintout(false) 
     {
         retStr[0]["eval"] = factory.createStructArray({1,1},{"objective","constraints","gradient","jacobian","hessian"});
         StructArrayRef evals = retStr[0]["eval"];
@@ -229,12 +231,17 @@ public:
             }
         }
 
-        isinitialised = isfield(funcs, "intermediate") && ishandle(funcs[0]["intermediate"]);
-
+        intermediateCallback = isfield(funcs, "intermediate") && ishandle(funcs[0]["intermediate"]);
+        diagnosticPrintout = isfield(options, "debug");
     }
 
     Array fevalWithX(const Array& handle) {
+        if (diagnosticPrintout)
+            stream << "Enter fevalWithX" << std::endl;
+
         std::vector<Array> retVal = feval(handle, 1, args);
+        if (diagnosticPrintout)
+            stream << "Exit fevalWithX" << std::endl;
         return retVal[0];
     }
 
@@ -248,6 +255,8 @@ public:
   bool get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
                     Index& nnz_h_lag, IndexStyleEnum& index_style) 
     {
+        if (diagnosticPrintout)
+            stream << "Enter get_nlp_info" << std::endl;
         index_style = C_STYLE;
         n = args[0].getNumberOfElements();
         _n = n;
@@ -282,7 +291,8 @@ public:
             SparseArray<double> Hes = std::move(hesStrOut[0]);
             nnz_h_lag = Hes.getNumberOfNonZeroElements();
         }
-        
+        if (diagnosticPrintout)
+            stream << "Exit get_nlp_info" << std::endl;
 
         return true;
     };
@@ -291,6 +301,8 @@ public:
   bool get_bounds_info(Index n, Number* x_l, Number* x_u,
                 Index m, Number* g_l, Number* g_u) 
     {
+        if (diagnosticPrintout)
+            stream << "Enter get_bounds_info" << std::endl;
         TypedArray<double> xl = std::move(options[0]["lb"]);
         TypedArray<double> xu = std::move(options[0]["ub"]);
         TypedArray<double> gl = std::move(options[0]["cl"]);
@@ -310,6 +322,8 @@ public:
         for (i=0; i<m; i++)
             g_u[i] = gu[i];
             
+        if (diagnosticPrintout)
+            stream << "Exit get_bounds_info" << std::endl;    
         return true;
     };
 
@@ -319,6 +333,8 @@ public:
                             Index m, bool init_lambda,
                             Number* lambda) 
 {   
+    if (diagnosticPrintout)
+        stream << "Enter get_starting_point" << std::endl;
     int i;
     if (init_x){
         for (i=0; i<n; i++)
@@ -329,18 +345,23 @@ public:
             z_L[i] = 0.;
             z_U[i] = 0.;
         }
-    if (init_lambda) {
-        for (i=0;i<m;i++)
-            lambda[i] = 0.;
+        if (init_lambda) {
+            for (i=0;i<m;i++)
+                lambda[i] = 0.;
+        }
     }
 
-    }
-
+    if (diagnosticPrintout)
+        stream << "Exit get_starting_point" << std::endl;
+    
     return true;
 };
 
   /** Method to return the objective value */
   bool eval_f(Index n, const Number* x, bool new_x, Number& obj_value){
+    if (diagnosticPrintout)
+        stream << "Enter eval_f" << std::endl;
+    
     if (new_x) 
         updateX(x);
 
@@ -348,11 +369,16 @@ public:
 
     obj_value = objOut[0];
 
+    if (diagnosticPrintout)
+        stream << "Exit eval_f" << std::endl;
+
     return true;
   };
 
   /** Method to return the gradient of the objective */
   bool eval_grad_f(Index n, const Number* x, bool new_x, Number* grad_f) {
+    if (diagnosticPrintout)
+        stream << "Enter eval_grad_f" << std::endl;
 
     if (new_x) 
         updateX(x);
@@ -362,11 +388,17 @@ public:
     for (auto i = 0; i < n; i++)
         grad_f[i] = gradOut[i];
 
+    if (diagnosticPrintout)
+        stream << "Exit eval_grad_f" << std::endl;
+
     return true;
   };
 
   /** Method to return the constraint residuals */
   bool eval_g(Index n, const Number* x, bool new_x, Index m, Number* g) {
+
+    if (diagnosticPrintout)
+        stream << "Enter eval_g" << std::endl;
 
     if (new_x) 
         updateX(x);
@@ -376,6 +408,9 @@ public:
     for (auto i = 0; i < m; i++)
         g[i] = constOut[i];
     
+    if (diagnosticPrintout)
+        stream << "Exit eval_g" << std::endl;
+
     return true;
   };
 
@@ -383,39 +418,43 @@ public:
    *   1) The structure of the jacobian (if "values" is NULL)
    *   2) The values of the jacobian (if "values" is not NULL)
    */
-  bool eval_jac_g(Index n, const Number* x, bool new_x,
-                Index m, Index nele_jac, Index* iRow, Index *jCol,
-                Number* values) 
-        {
+bool eval_jac_g(Index n, const Number* x, bool new_x,
+            Index m, Index nele_jac, Index* iRow, Index *jCol,
+            Number* values) 
+{
+if (diagnosticPrintout)
+    stream << "Enter eval_jac_g" << std::endl;
+    
+    if (nullptr == values){
+        Array jacobianStructure = funcs[0]["jacobianstructure"];
+        std::vector<Array> args(0);
+        std::vector<Array> jacStrOut = feval(jacobianStructure, 1, args);
 
-            if (nullptr == values){
-                Array jacobianStructure = funcs[0]["jacobianstructure"];
-                std::vector<Array> args(0);
-                std::vector<Array> jacStrOut = feval(jacobianStructure, 1, args);
+        SparseArray<double> JacobianStr(std::move(jacStrOut[0]));
 
-                SparseArray<double> JacobianStr(std::move(jacStrOut[0]));
+        auto i = 0;
+        for (TypedIterator<double> it = JacobianStr.begin(); it != JacobianStr.end(); it++){
+            iRow[i] = JacobianStr.getIndex(it).first;
+            jCol[i] = JacobianStr.getIndex(it).second;
+            i++;
+        }
 
-                auto i = 0;
-                for (TypedIterator<double> it = JacobianStr.begin(); it != JacobianStr.end(); it++){
-                    iRow[i] = JacobianStr.getIndex(it).first;
-                    jCol[i] = JacobianStr.getIndex(it).second;
-                    i++;
-                }
+    } else {
 
-            } else {
+        if (new_x) 
+            updateX(x);
 
-                if (new_x) 
-                    updateX(x);
-
-                SparseArray<double> Jacobian = fevalWithX(funcs[0]["jacobian"]);
-                auto i = 0;
-                for (auto& elem : Jacobian){
-                    values[i] = elem;
-                    i++;
-                }
-            }
-            return true;
-        };
+        SparseArray<double> Jacobian = fevalWithX(funcs[0]["jacobian"]);
+        auto i = 0;
+        for (auto& elem : Jacobian){
+            values[i] = elem;
+            i++;
+        }
+    }
+    if (diagnosticPrintout)
+        stream << "Exit eval_jac_g" << std::endl;
+    return true;
+};
 
   /** Method to return:
    *   1) The structure of the hessian of the lagrangian (if "values" is NULL)
@@ -426,6 +465,8 @@ public:
                       bool new_lambda, Index nele_hess, Index* iRow,
                       Index* jCol, Number* values) 
         {
+        if (diagnosticPrintout)
+            stream << "Enter eval_h" << std::endl;
 
             if (nullptr == values){
                 Array hessianStructure = funcs[0]["hessianstructure"];
@@ -457,6 +498,8 @@ public:
                     i++;
                 }
             }
+            if (diagnosticPrintout)
+                stream << "Exit eval_h" << std::endl;
             return true;
         };
 
@@ -476,7 +519,8 @@ public:
                                 const IpoptData* ip_data, 
                                 IpoptCalculatedQuantities* ip_cq) 
     {
-
+    if (diagnosticPrintout)
+        stream << "Enter intermediate_callback" << std::endl;
       if (intermediateCallback){
             StructArray passVal = factory.createStructArray({0, 0},{});
             TNLPAdapter* tnlp_adapter(nullptr);
@@ -545,12 +589,21 @@ public:
                     std::vector<Array> retVal = feval(funcs[0]["intermediate"],1,args);
 
                     TypedArray<bool> retValue = std::move(retVal[0]);
-
+                    
+                    if (diagnosticPrintout)
+                        stream << "Exit intermediate_callback" << std::endl;
+                    
                     return retValue[0];
                 }
             }
+            if (diagnosticPrintout)
+                stream << "Exit intermediate_callback" << std::endl;
+
             return true;
         } else {
+            if (diagnosticPrintout)
+                stream << "Exit intermediate_callback" << std::endl;
+
             return true;
         }
 
@@ -565,6 +618,8 @@ public:
                             Number obj_value, const IpoptData* ip_data,
 				            IpoptCalculatedQuantities* ip_cq) 
     {
+        if (diagnosticPrintout)
+            stream << "Enter finalize_solution" << std::endl;
 
         updateX(x);
 
@@ -577,6 +632,9 @@ public:
         TypedArrayRef<double> lam = retStr[0]["lambda"];
         for (auto i = 0; i < m; i++)
             lam[i] = lambda[i];
+
+        if (diagnosticPrintout)
+            stream << "Exit finalize_solution" << std::endl;
 
         };
   //@}
