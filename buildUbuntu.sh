@@ -27,31 +27,44 @@
 # WORKDIR /home
 # this folder is mounted into /source
 
-cd /home
+PWD=$(pwd)
+cd ${HOME}
 
 echo "Deleting build output folder"
-rm -rf /home/build
-mkdir /home/build
+rm -rf ${HOME}/build
+mkdir ${HOME}/build
+
+MATLABROOT=/opt/MATLAB/R2020b
 
 # Not sure why this needs to be exported but simply having a local variable does not work.
-export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/home/build/lib/pkgconfig/
+export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${HOME}build/lib/pkgconfig/
+
+
 
 echo "Deleting repos"
-rm -rf /home/ThirdParty-HSL
-rm -rf /home/Ipopt
+rm -rf ${HOME}/ThirdParty-HSL
+rm -rf ${HOME}/Ipopt
+rm -rf ${HOME}/OpenBLAS
+
+git clone https://github.com/xianyi/OpenBLAS.git
+cd ${HOME}/OpenBLAS
+make
+cd ${HOME}
 
 git clone https://github.com/coin-or-tools/ThirdParty-HSL.git
-cp --recursive /source/coinhsl-archive-2014.01.17/ /home/ThirdParty-HSL/coinhsl
-cd /home/ThirdParty-HSL
-./configure --prefix=/home/build --with-metis-lflags="-L/usr/lib/x86_64-linux-gnu -lmetis" --with-metis-cflags=-I/usr/include --enable-static
+# download coinhsl (https://www.hsl.rl.ac.uk/ipopt/) which is free for academia and put it in ${HOME}/coinhsl or change the line below.
+cp --recursive ${HOME}/coinhsl ${HOME}/ThirdParty-HSL/coinhsl
+cd ${HOME}/ThirdParty-HSL
+./configure --prefix=${HOME}/build --with-metis-lflags="-L/usr/lib/x86_64-linux-gnu -lmetis" --with-metis-cflags=-I/usr/include --enable-static --with-lapack-lflags="-L${HOME}/OpenBLAS -lopenblas"
 make -j $(nproc) install
 
-cd /home
+cd ${HOME}
 git clone https://github.com/coin-or/Ipopt.git
-cd /home/Ipopt
+cd ${HOME}/Ipopt
 git checkout origin/stable/3.14
 
-./configure --prefix=/home/build --with-hsl-cflags="$(pkg-config --cflags coinhsl)" --with-hsl-lflags="$(pkg-config --libs coinhsl)" --with-lapack="$(pkg-config --libs lapack)" --disable-linear-solver-loader --disable-sipopt --disable-java --enable-static
+./configure --prefix=${HOME}/build --with-hsl-cflags="$(pkg-config --cflags coinhsl)" --with-hsl-lflags="$(pkg-config --libs coinhsl)" --disable-linear-solver-loader --disable-sipopt --disable-java --enable-static --with-lapack-lflags="-L${HOME}/OpenBLAS -lopenblas"
 make -j $(nproc) install
 
-cp --recursive /home/build /mydrive/build
+
+cd ${PWD}

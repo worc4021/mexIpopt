@@ -354,6 +354,9 @@ public:
     if (diagnosticPrintout)
         stream << "Exit get_starting_point" << std::endl;
     
+    if (diagnosticPrintout)
+        stream << "n: " << n << " init_x: " << init_x << " init_z " << init_z << " m: " << m << " init lambda " << init_lambda << std::endl;
+
     return true;
 };
 
