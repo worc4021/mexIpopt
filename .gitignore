@@ -35,3 +35,6 @@
 
 # Mac directory files
 .DS_Store
+
+vcpkg
+build
