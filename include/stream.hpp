@@ -10,14 +10,13 @@ private:
 public:
     Buffer() = default;
     int sync() {
-        utilities::printf("{}", this->str());
-        // matlabPtr->feval(   matlab::engine::convertUTF8StringToUTF16String("fprintf"),
-        //                     0,
-        //                     std::vector<matlab::data::Array>({
-        //                             factory.createScalar(this->str())
+        matlabPtr->feval(   matlab::engine::convertUTF8StringToUTF16String("fprintf"),
+                            0,
+                            std::vector<matlab::data::Array>({
+                                    factory.createScalar(this->str())
                                 
-        //                     })
-        //                 );
+                            })
+                        );
         str("");
         return 0;
     }
