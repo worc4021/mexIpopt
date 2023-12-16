@@ -9,7 +9,9 @@ pkg_check_modules(ipopt REQUIRED IMPORTED_TARGET ipopt)
 
 set(MKL_LINK "static")
 set(MKL_THREADING "sequential")
+set(MKL_INTERFACE_FULL "intel_lp64")
 find_package(MKL REQUIRED)
+
 
 add_subdirectory(MexUtilities)
 
