@@ -1,6 +1,7 @@
 #pragma once
-#include "mexFunctions.hpp"
+#include "utilities.hpp"
 #include "stream.hpp"
+
 #include "IpTNLP.hpp"
 #include "IpIpoptApplication.hpp"
 #include "IpIpoptCalculatedQuantities.hpp"
@@ -9,15 +10,12 @@
 #include "IpOrigIpoptNLP.hpp"
 #include "IpJournalist.hpp"
 #include "IpSolveStatistics.hpp"
-#include "mex.hpp"
-#include "mexAdapter.hpp"
+
 #include <algorithm>
 #include <memory>
 
-using namespace Ipopt;
-
 class MatlabJournal : 
-    public Journal 
+    public Ipopt::Journal
 {
 private:
     Buffer buffer;
@@ -25,16 +23,12 @@ private:
 public:
 
     MatlabJournal(const std::string& name,
-                        EJournalLevel level,
+                        Ipopt::EJournalLevel level,
                         std::shared_ptr<matlab::engine::MATLABEngine> mptr) : 
-        Journal(name, level),
-        cout(&buffer)
-        {
-            buffer.setMatlabPtr(mptr);
-        }
+        Ipopt::Journal(name, level),
+        cout(&buffer) {}
 
-    virtual ~MatlabJournal(void) {}
-
+    virtual ~MatlabJournal() {}
 
 protected:
 
@@ -45,16 +39,16 @@ protected:
     // These functions override the functions in the Journal class.
     virtual
     void
-    PrintImpl( EJournalCategory category,
-            EJournalLevel    level,
+    PrintImpl( Ipopt::EJournalCategory category,
+            Ipopt::EJournalLevel    level,
             char const *     str) {
         cout << std::string(str);
     }
 
     virtual
     void
-    PrintfImpl( EJournalCategory category,
-                EJournalLevel    level,
+    PrintfImpl( Ipopt::EJournalCategory category,
+                Ipopt::EJournalLevel    level,
                 char const *     pformat,
                 va_list ap ) {
                     char buffer[1000];
@@ -71,17 +65,18 @@ protected:
 };
 
 
-class myNLP : public TNLP
+class myNLP 
+    : public Ipopt::TNLP
 {
 private:
-    std::shared_ptr<matlab::engine::MATLABEngine> matlabPtr;
-    ArrayFactory factory;
-    StructArray funcs;
-    StructArray options;
-    StructArray retStr;
-    size_t _n;
-    size_t _m;
-    std::vector<Array> args;
+    
+    matlab::data::ArrayFactory factory;
+    matlab::data::StructArray funcs;
+    matlab::data::StructArray options;
+    matlab::data::StructArray retStr;
+    std::size_t _n;
+    std::size_t _m;
+    std::vector<matlab::data::Array> args;
     bool isinitialised;
     bool returnHessian;
     bool intermediateCallback;
@@ -89,16 +84,12 @@ private:
     Buffer buffer;
     std::ostream stream;
 
-    void Error(std::string message) {
-        displayError(matlabPtr, factory, message);
-    }
-
-    std::vector<Array> feval(
-            const Array &handle, 
-            const size_t numReturned, 
-            const std::vector<Array> &arguments
+    std::vector<matlab::data::Array> feval(
+            const matlab::data::Array &handle, 
+            const std::size_t numReturned, 
+            const std::vector<matlab::data::Array> &arguments
             ) {
-        std::vector<Array> theArgs({handle});
+        std::vector<matlab::data::Array> theArgs({handle});
         theArgs.insert(theArgs.end(), arguments.begin(), arguments.end());
         return matlabPtr->feval(
             matlab::engine::convertUTF8StringToUTF16String("feval"),
@@ -107,64 +98,64 @@ private:
         );
     }
 
-    void updateX(const Number *x){
+    void updateX(const Ipopt::Number *x){
         for (auto i = 0 ; i < args[0].getNumberOfElements(); i++)
             args[0][i] = x[i];
     }
 
-    std::string getStatus(SolverReturn status){
+    std::string getStatus(Ipopt::SolverReturn status){
         std::string retVal;
         switch (status)
         {
-        case SUCCESS:
+        case Ipopt::SUCCESS:
             retVal = "SUCCESS";
             break;
-        case MAXITER_EXCEEDED:
+        case Ipopt::MAXITER_EXCEEDED:
             retVal = "MAXITER_EXCEEDED";
             break;
-        case CPUTIME_EXCEEDED:
+        case Ipopt::CPUTIME_EXCEEDED:
             retVal = "CPUTIME_EXCEEDED";
             break;
-        case STOP_AT_TINY_STEP:
+        case Ipopt::STOP_AT_TINY_STEP:
             retVal = "STOP_AT_TINY_STEP";
             break;
-        case STOP_AT_ACCEPTABLE_POINT:
+        case Ipopt::STOP_AT_ACCEPTABLE_POINT:
             retVal = "STOP_AT_ACCEPTABLE_POINT";
             break;
-        case LOCAL_INFEASIBILITY:
+        case Ipopt::LOCAL_INFEASIBILITY:
             retVal = "LOCAL_INFEASIBILITY";
             break;
-        case USER_REQUESTED_STOP:
+        case Ipopt::USER_REQUESTED_STOP:
             retVal = "USER_REQUESTED_STOP";
             break;
-        case FEASIBLE_POINT_FOUND:
+        case Ipopt::FEASIBLE_POINT_FOUND:
             retVal = "FEASIBLE_POINT_FOUND";
             break;
-        case DIVERGING_ITERATES:
+        case Ipopt::DIVERGING_ITERATES:
             retVal = "DIVERGING_ITERATES";
             break;
-        case RESTORATION_FAILURE:
+        case Ipopt::RESTORATION_FAILURE:
             retVal = "RESTORATION_FAILURE";
             break;
-        case ERROR_IN_STEP_COMPUTATION:
+        case Ipopt::ERROR_IN_STEP_COMPUTATION:
             retVal = "ERROR_IN_STEP_COMPUTATION";
             break;
-        case INVALID_NUMBER_DETECTED:
+        case Ipopt::INVALID_NUMBER_DETECTED:
             retVal = "INVALID_NUMBER_DETECTED";
             break;
-        case TOO_FEW_DEGREES_OF_FREEDOM:
+        case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM:
             retVal = "TOO_FEW_DEGREES_OF_FREEDOM";
             break;
-        case INVALID_OPTION:
+        case Ipopt::INVALID_OPTION:
             retVal = "INVALID_OPTION";
             break;
-        case OUT_OF_MEMORY:
+        case Ipopt::OUT_OF_MEMORY:
             retVal = "OUT_OF_MEMORY";
             break;
-        case INTERNAL_ERROR:
+        case Ipopt::INTERNAL_ERROR:
             retVal = "INTERNAL_ERROR";
             break;
-        case UNASSIGNED:
+        case Ipopt::UNASSIGNED:
             retVal = "UNASSIGNED";
             break;
         default:
@@ -184,7 +175,7 @@ public:
         diagnosticPrintout(false) 
     {
         retStr[0]["eval"] = factory.createStructArray({1,1},{"objective","constraints","gradient","jacobian","hessian"});
-        StructArrayRef evals = retStr[0]["eval"];
+        matlab::data::StructArrayRef evals = retStr[0]["eval"];
         evals[0]["objective"] = factory.createScalar<int>(0);
         evals[0]["constraints"] = factory.createScalar<int>(0);
         evals[0]["gradient"] = factory.createScalar<int>(0);
@@ -195,51 +186,48 @@ public:
         retStr[0]["objective"] = factory.createScalar<double>(NAN);
     };
 
-    TypedArray<double> getX(void) {
+    matlab::data::TypedArray<double> getX(void) {
         return args[0];
     };
 
-    StructArray getInfo(void) {
+    matlab::data::StructArray getInfo(void) {
         return retStr;
     }
 
-    void setup(
-            std::shared_ptr<matlab::engine::MATLABEngine>& mptr, 
-            TypedArray<double>& _x0, 
-            StructArray& _funcs, 
-            StructArray& _options
+    void setup( 
+            matlab::data::TypedArray<double>& _x0, 
+            matlab::data::StructArray& _funcs, 
+            matlab::data::StructArray& _options
         ) {
-        matlabPtr = mptr;
-        buffer.setMatlabPtr(matlabPtr);
 
         args[0] = _x0;
 
         funcs = _funcs;
         options = _options;
 
-        if (isfield(options, "ipopt")){
-            StructArray ipoptStr = options[0]["ipopt"];
-            if (isfield(ipoptStr, "hessian_approximation")){
-                if (isstring(ipoptStr[0]["hessian_approximation"])  ) {
+        if (utilities::isfield(options, "ipopt")){
+            matlab::data::StructArray ipoptStr = options[0]["ipopt"];
+            if (utilities::isfield(ipoptStr, "hessian_approximation")){
+                if (utilities::isstring(ipoptStr[0]["hessian_approximation"])  ) {
                     returnHessian = (
-                        0 != getStringValue(ipoptStr[0]["hessian_approximation"])
+                        0 != utilities::getstringvalue(ipoptStr[0]["hessian_approximation"])
                                 .compare("limited-memory")
                                 );
                 } else {
-                    Error("limited-memory must be a string type");
+                    utilities::error("limited-memory must be a string type");
                 }
             }
         }
 
-        intermediateCallback = isfield(funcs, "intermediate") && ishandle(funcs[0]["intermediate"]);
-        diagnosticPrintout = isfield(options, "debug");
+        intermediateCallback = utilities::isfield(funcs, "intermediate") && utilities::ishandle(funcs[0]["intermediate"]);
+        diagnosticPrintout = utilities::isfield(options, "debug");
     }
 
-    Array fevalWithX(const Array& handle) {
+    matlab::data::Array fevalWithX(const matlab::data::Array& handle) {
         if (diagnosticPrintout)
             stream << "Enter fevalWithX" << std::endl;
 
-        std::vector<Array> retVal = feval(handle, 1, args);
+        std::vector<matlab::data::Array> retVal = feval(handle, 1, args);
         if (diagnosticPrintout)
             stream << "Exit fevalWithX" << std::endl;
         return retVal[0];
@@ -252,8 +240,8 @@ public:
   /**@name Overloaded from TNLP */
   //@{
   /** Method to return some info about the nlp */
-  bool get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
-                    Index& nnz_h_lag, IndexStyleEnum& index_style) 
+  bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
+                    Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style) 
     {
         if (diagnosticPrintout)
             stream << "Enter get_nlp_info" << std::endl;
@@ -261,7 +249,7 @@ public:
         n = args[0].getNumberOfElements();
         _n = n;
 
-        TypedArray<double> cu = options[0]["cu"];
+        matlab::data::TypedArray<double> cu = options[0]["cu"];
         m = cu.getNumberOfElements();
         _m = m;
         
@@ -271,24 +259,24 @@ public:
         retStr[0]["lambda"] = factory.createArray<double>({static_cast<size_t>(m),1});
         
 
-        std::vector<Array> nullArgs = {};
+        std::vector<matlab::data::Array> nullArgs = {};
 
-        std::vector<Array> jacStrOut = feval(funcs[0]["jacobianstructure"], 1, nullArgs);
+        std::vector<matlab::data::Array> jacStrOut = feval(funcs[0]["jacobianstructure"], 1, nullArgs);
         
-        if ( !issparse(jacStrOut[0]) ) {
-            Error("Jacobian has to be sparse");
+        if ( !utilities::issparse(jacStrOut[0]) ) {
+            utilities::error("Jacobian has to be sparse");
         }
 
-        SparseArray<double> Jac = std::move(jacStrOut[0]);
+        matlab::data::SparseArray<double> Jac = std::move(jacStrOut[0]);
 
         nnz_jac_g = Jac.getNumberOfNonZeroElements();
 
         if (returnHessian){
-            std::vector<Array> hesStrOut = feval(funcs[0]["hessianstructure"],1,nullArgs);
-            if ( !issparse(hesStrOut[0]) ) {
-                Error("Hessian has to be sparse");
+            std::vector<matlab::data::Array> hesStrOut = feval(funcs[0]["hessianstructure"],1,nullArgs);
+            if ( !utilities::issparse(hesStrOut[0]) ) {
+                utilities::error("Hessian has to be sparse");
             }
-            SparseArray<double> Hes = std::move(hesStrOut[0]);
+            matlab::data::SparseArray<double> Hes = std::move(hesStrOut[0]);
             nnz_h_lag = Hes.getNumberOfNonZeroElements();
         }
         if (diagnosticPrintout)
@@ -298,28 +286,26 @@ public:
     };
 
   /** Method to return the bounds for my problem */
-  bool get_bounds_info(Index n, Number* x_l, Number* x_u,
-                Index m, Number* g_l, Number* g_u) 
+  bool get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
+                Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) 
     {
         if (diagnosticPrintout)
             stream << "Enter get_bounds_info" << std::endl;
-        TypedArray<double> xl = std::move(options[0]["lb"]);
-        TypedArray<double> xu = std::move(options[0]["ub"]);
-        TypedArray<double> gl = std::move(options[0]["cl"]);
-        TypedArray<double> gu = std::move(options[0]["cu"]);
+        matlab::data::TypedArray<double> xl = std::move(options[0]["lb"]);
+        matlab::data::TypedArray<double> xu = std::move(options[0]["ub"]);
+        matlab::data::TypedArray<double> gl = std::move(options[0]["cl"]);
+        matlab::data::TypedArray<double> gu = std::move(options[0]["cu"]);
 
-        int i;
-
-        for (i=0; i<n; i++)
+        for (auto i=0; i<n; i++)
             x_l[i] = xl[i];
 
-        for (i=0; i<n; i++)
+        for (auto i=0; i<n; i++)
             x_u[i] = xu[i];
 
-        for (i=0; i<m; i++)
+        for (auto i=0; i<m; i++)
             g_l[i] = gl[i];
 
-        for (i=0; i<m; i++)
+        for (auto i=0; i<m; i++)
             g_u[i] = gu[i];
             
         if (diagnosticPrintout)
@@ -328,25 +314,24 @@ public:
     };
 
   /** Method to return the starting point for the algorithm */
-  bool get_starting_point(  Index n, bool init_x, Number* x,
-                            bool init_z, Number* z_L, Number* z_U,
-                            Index m, bool init_lambda,
-                            Number* lambda) 
+  bool get_starting_point(  Ipopt::Index n, bool init_x, Ipopt::Number* x,
+                            bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U,
+                            Ipopt::Index m, bool init_lambda,
+                            Ipopt::Number* lambda) 
 {   
     if (diagnosticPrintout)
         stream << "Enter get_starting_point" << std::endl;
-    int i;
     if (init_x){
-        for (i=0; i<n; i++)
+        for (auto i=0; i<n; i++)
             x[i] = args[0][i];
     }
     if (init_z){
-        for (i=0;i<n;i++){
+        for (auto i=0; i<n; i++){
             z_L[i] = 0.;
             z_U[i] = 0.;
         }
         if (init_lambda) {
-            for (i=0;i<m;i++)
+            for (auto i=0; i<m; i++)
                 lambda[i] = 0.;
         }
     }
@@ -361,14 +346,14 @@ public:
 };
 
   /** Method to return the objective value */
-  bool eval_f(Index n, const Number* x, bool new_x, Number& obj_value){
+  bool eval_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number& obj_value){
     if (diagnosticPrintout)
         stream << "Enter eval_f" << std::endl;
     
     if (new_x) 
         updateX(x);
 
-    TypedArray<double> objOut = fevalWithX(funcs[0]["objective"]);
+    matlab::data::TypedArray<double> objOut = fevalWithX(funcs[0]["objective"]);
 
     obj_value = objOut[0];
 
@@ -379,14 +364,14 @@ public:
   };
 
   /** Method to return the gradient of the objective */
-  bool eval_grad_f(Index n, const Number* x, bool new_x, Number* grad_f) {
+  bool eval_grad_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number* grad_f) {
     if (diagnosticPrintout)
         stream << "Enter eval_grad_f" << std::endl;
 
     if (new_x) 
         updateX(x);
 
-    TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"]);
+    matlab::data::TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"]);
 
     for (auto i = 0; i < n; i++)
         grad_f[i] = gradOut[i];
@@ -398,7 +383,7 @@ public:
   };
 
   /** Method to return the constraint residuals */
-  bool eval_g(Index n, const Number* x, bool new_x, Index m, Number* g) {
+  bool eval_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Index m, Ipopt::Number* g) {
 
     if (diagnosticPrintout)
         stream << "Enter eval_g" << std::endl;
@@ -406,7 +391,7 @@ public:
     if (new_x) 
         updateX(x);
 
-    TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"]);
+    matlab::data::TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"]);
     
     for (auto i = 0; i < m; i++)
         g[i] = constOut[i];
@@ -421,22 +406,22 @@ public:
    *   1) The structure of the jacobian (if "values" is NULL)
    *   2) The values of the jacobian (if "values" is not NULL)
    */
-bool eval_jac_g(Index n, const Number* x, bool new_x,
-            Index m, Index nele_jac, Index* iRow, Index *jCol,
-            Number* values) 
+bool eval_jac_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+            Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index *jCol,
+            Ipopt::Number* values) 
 {
 if (diagnosticPrintout)
     stream << "Enter eval_jac_g" << std::endl;
     
     if (nullptr == values){
-        Array jacobianStructure = funcs[0]["jacobianstructure"];
-        std::vector<Array> args(0);
-        std::vector<Array> jacStrOut = feval(jacobianStructure, 1, args);
+        matlab::data::Array jacobianStructure = funcs[0]["jacobianstructure"];
+        std::vector<matlab::data::Array> args(0);
+        std::vector<matlab::data::Array> jacStrOut = feval(jacobianStructure, 1, args);
 
-        SparseArray<double> JacobianStr(std::move(jacStrOut[0]));
+        matlab::data::SparseArray<double> JacobianStr(std::move(jacStrOut[0]));
 
         auto i = 0;
-        for (TypedIterator<double> it = JacobianStr.begin(); it != JacobianStr.end(); it++){
+        for (matlab::data::TypedIterator<double> it = JacobianStr.begin(); it != JacobianStr.end(); it++){
             iRow[i] = JacobianStr.getIndex(it).first;
             jCol[i] = JacobianStr.getIndex(it).second;
             i++;
@@ -447,7 +432,7 @@ if (diagnosticPrintout)
         if (new_x) 
             updateX(x);
 
-        SparseArray<double> Jacobian = fevalWithX(funcs[0]["jacobian"]);
+        matlab::data::SparseArray<double> Jacobian = fevalWithX(funcs[0]["jacobian"]);
         auto i = 0;
         for (auto& elem : Jacobian){
             values[i] = elem;
@@ -463,21 +448,21 @@ if (diagnosticPrintout)
    *   1) The structure of the hessian of the lagrangian (if "values" is NULL)
    *   2) The values of the hessian of the lagrangian (if "values" is not NULL)
    */
-  bool eval_h(Index n, const Number* x, bool new_x,
-                      Number obj_factor, Index m, const Number* lambda,
-                      bool new_lambda, Index nele_hess, Index* iRow,
-                      Index* jCol, Number* values) 
+  bool eval_h(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+                      Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda,
+                      bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow,
+                      Ipopt::Index* jCol, Ipopt::Number* values) 
         {
         if (diagnosticPrintout)
             stream << "Enter eval_h" << std::endl;
 
             if (nullptr == values){
-                Array hessianStructure = funcs[0]["hessianstructure"];
-                std::vector<Array> args(0);
-                std::vector<Array> hesStrOut = feval(hessianStructure, 1, args);
-                SparseArray<double> HessianStr(std::move(hesStrOut[0]));
+                matlab::data::Array hessianStructure = funcs[0]["hessianstructure"];
+                std::vector<matlab::data::Array> args(0);
+                std::vector<matlab::data::Array> hesStrOut = feval(hessianStructure, 1, args);
+                matlab::data::SparseArray<double> HessianStr(std::move(hesStrOut[0]));
                 auto i = 0;
-                for (TypedIterator<double> it = HessianStr.begin(); it != HessianStr.end(); it++){
+                for (matlab::data::TypedIterator<double> it = HessianStr.begin(); it != HessianStr.end(); it++){
                     iRow[i] = HessianStr.getIndex(it).first;
                     jCol[i] = HessianStr.getIndex(it).second;
                     i++;
@@ -486,15 +471,15 @@ if (diagnosticPrintout)
                 if (new_x) 
                     updateX(x);
 
-                std::vector<Array> hessianArgs = {
+                std::vector<matlab::data::Array> hessianArgs = {
                     args[0], 
                     factory.createScalar(obj_factor), 
                     factory.createArray<double>({static_cast<size_t>(m),1}, lambda, lambda + m)
                 };
 
 
-                std::vector<Array> retVals = feval(funcs[0]["hessian"], 1, hessianArgs);
-                SparseArray<double> Hessian = std::move(retVals[0]);
+                std::vector<matlab::data::Array> retVals = feval(funcs[0]["hessian"], 1, hessianArgs);
+                matlab::data::SparseArray<double> Hessian = std::move(retVals[0]);
                 auto i = 0;
                 for (auto& elem : Hessian){
                     values[i] = elem;
@@ -508,31 +493,31 @@ if (diagnosticPrintout)
 
   //@}
 
-  bool intermediate_callback(   AlgorithmMode mode, 
-                                Index iter, 
-                                Number obj_value, 
-                                Number inf_pr, 
-                                Number inf_du, 
-                                Number mu, 
-                                Number d_norm, 
-                                Number regularization_size, 
-                                Number alpha_du, 
-                                Number alpha_pr, 
-                                Index ls_trials, 
-                                const IpoptData* ip_data, 
-                                IpoptCalculatedQuantities* ip_cq) 
+  bool intermediate_callback(   Ipopt::AlgorithmMode mode, 
+                                Ipopt::Index iter, 
+                                Ipopt::Number obj_value, 
+                                Ipopt::Number inf_pr, 
+                                Ipopt::Number inf_du, 
+                                Ipopt::Number mu, 
+                                Ipopt::Number d_norm, 
+                                Ipopt::Number regularization_size, 
+                                Ipopt::Number alpha_du, 
+                                Ipopt::Number alpha_pr, 
+                                Ipopt::Index ls_trials, 
+                                const Ipopt::IpoptData* ip_data, 
+                                Ipopt::IpoptCalculatedQuantities* ip_cq) 
     {
     if (diagnosticPrintout)
         stream << "Enter intermediate_callback" << std::endl;
       if (intermediateCallback){
-            StructArray passVal = factory.createStructArray({0, 0},{});
-            TNLPAdapter* tnlp_adapter(nullptr);
+            matlab::data::StructArray passVal = factory.createStructArray({0, 0},{});
+            Ipopt::TNLPAdapter* tnlp_adapter(nullptr);
             if ( nullptr != ip_cq )
             {
-                OrigIpoptNLP* orignlp;
-                orignlp = dynamic_cast<OrigIpoptNLP*>(GetRawPtr(ip_cq->GetIpoptNLP()));
+                Ipopt::OrigIpoptNLP* orignlp;
+                orignlp = dynamic_cast<Ipopt::OrigIpoptNLP*>(GetRawPtr(ip_cq->GetIpoptNLP()));
                 if ( nullptr != orignlp )
-                    tnlp_adapter = dynamic_cast<TNLPAdapter*>(GetRawPtr(orignlp->nlp()));
+                    tnlp_adapter = dynamic_cast<Ipopt::TNLPAdapter*>(GetRawPtr(orignlp->nlp()));
                 if ( nullptr != tnlp_adapter ) {
                     passVal = factory.createStructArray(
                             {1, 1},
@@ -554,22 +539,22 @@ if (diagnosticPrintout)
                     
                     std::unique_ptr<double[]> buffer_(new double[std::max(2*_n,_m)]);
                     
-                    TypedArray<double> primals(factory.createArray<double>({_n,1}));
+                    matlab::data::TypedArray<double> primals(factory.createArray<double>({_n,1}));
                     // Weird construct required as x.release.get() somehow kills the mex
                     tnlp_adapter->ResortX(*ip_data->curr()->x(), buffer_.get() );
                     for (auto i = 0; i<_n ; i ++)
                         primals[i] = buffer_[i];
                     passVal[0]["primals"] = std::move(primals);
 
-                    TypedArray<double> duals(factory.createArray<double>({_m,1}));
+                    matlab::data::TypedArray<double> duals(factory.createArray<double>({_m,1}));
                     tnlp_adapter->ResortG(*ip_data->curr()->y_c(), *ip_data->curr()->y_d(), buffer_.get() );
                     for (auto i = 0; i<_m; i++)
                         duals[i] = buffer_[i];
                     passVal[0]["duals"]  = std::move(duals);
 
 
-                    TypedArray<double> duallbs(factory.createArray<double>({_n,1}));
-                    TypedArray<double> dualubs(factory.createArray<double>({_n,1}));
+                    matlab::data::TypedArray<double> duallbs(factory.createArray<double>({_n,1}));
+                    matlab::data::TypedArray<double> dualubs(factory.createArray<double>({_n,1}));
                     tnlp_adapter->ResortBnds(   *ip_data->curr()->z_L(), buffer_.get(),
                                                 *ip_data->curr()->z_U(), buffer_.get() + _n);
                     for (auto i = 0; i<_n; i++) {
@@ -588,10 +573,10 @@ if (diagnosticPrintout)
                     passVal[0]["alpha_du"] = factory.createScalar(alpha_du);
                     passVal[0]["alpha_pr"] = factory.createScalar(alpha_pr);
 
-                    std::vector<Array> args({std::move(passVal)});
-                    std::vector<Array> retVal = feval(funcs[0]["intermediate"],1,args);
+                    std::vector<matlab::data::Array> args({std::move(passVal)});
+                    std::vector<matlab::data::Array> retVal = feval(funcs[0]["intermediate"],1,args);
 
-                    TypedArray<bool> retValue = std::move(retVal[0]);
+                    matlab::data::TypedArray<bool> retValue = std::move(retVal[0]);
                     
                     if (diagnosticPrintout)
                         stream << "Exit intermediate_callback" << std::endl;
@@ -615,24 +600,24 @@ if (diagnosticPrintout)
   /** @name Solution Methods */
   //@{
   /** This method is called when the algorithm is complete so the TNLP can store/write the solution */
-  void finalize_solution(   SolverReturn status,
-                            Index n, const Number* x, const Number* z_L, const Number* z_U,
-                            Index m, const Number* g, const Number* lambda,
-                            Number obj_value, const IpoptData* ip_data,
-				            IpoptCalculatedQuantities* ip_cq) 
+  void finalize_solution(   Ipopt::SolverReturn status,
+                            Ipopt::Index n, const Ipopt::Number* x, const Ipopt::Number* z_L, const Ipopt::Number* z_U,
+                            Ipopt::Index m, const Ipopt::Number* g, const Ipopt::Number* lambda,
+                            Ipopt::Number obj_value, const Ipopt::IpoptData* ip_data,
+				            Ipopt::IpoptCalculatedQuantities* ip_cq) 
     {
         if (diagnosticPrintout)
             stream << "Enter finalize_solution" << std::endl;
 
         updateX(x);
 
-        TypedArrayRef<double> zL = retStr[0]["z_L"];
+        matlab::data::TypedArrayRef<double> zL = retStr[0]["z_L"];
         for (auto i = 0; i < n; i++)
             zL[i] = z_L[i];
-        TypedArrayRef<double> zU = retStr[0]["z_U"];
+        matlab::data::TypedArrayRef<double> zU = retStr[0]["z_U"];
         for (auto i = 0; i < n; i++)
             zU[i] = z_U[i];
-        TypedArrayRef<double> lam = retStr[0]["lambda"];
+        matlab::data::TypedArrayRef<double> lam = retStr[0]["lambda"];
         for (auto i = 0; i < m; i++)
             lam[i] = lambda[i];
 
