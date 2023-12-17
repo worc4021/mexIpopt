@@ -1,0 +1,40 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "oneApi",
+            "displayName": "intel oneApi",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "icx-cl",
+                "CMAKE_CXX_COMPILER": "icx-cl",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostOS}",
+                "rhs": "Windows"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "oneApi-build",
+            "displayName": "intel oneApi",
+            "configurePreset": "oneApi",
+            "configuration": "RelWithDebInfo"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "oneApi-test",
+            "displayName": "intel oneApi",
+            "configurePreset": "oneApi",
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "verbose"
+            }
+        }]
+}
