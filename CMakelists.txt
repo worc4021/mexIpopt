@@ -34,3 +34,10 @@ target_include_directories(ipopt_mex PRIVATE
                             ${ipopt_INCLUDE_DIRS})
 
 target_link_directories(ipopt_mex PRIVATE ${ipopt_LIBRARY_DIRS})
+
+message(STATUS "binary path: ${CMAKE_CURRENT_BINARY_DIR}")
+
+include(CTest)
+matlab_add_unit_test(NAME test_ipopt_mex
+                     UNITTEST_FILE hs71.m
+                     ADDITIONAL_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/matlab)
