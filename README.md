@@ -58,3 +58,6 @@ ctest --preset oneApi-test
 ```
 
 As mentioned above, once you have a mex file, it depends on nothing outside your matlab installation. I.e. you can copy it onto any other Matlab installation of compatible Matlab release (i.e. using a later version is fine).
+
+## Notes:
+- When rebuilding, I found that often I needed to clear the previous build folder if any configuration of upstream libraries changed.
