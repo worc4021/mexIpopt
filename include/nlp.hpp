@@ -555,7 +555,7 @@ if (diagnosticPrintout)
 
                     matlab::data::TypedArray<double> duallbs(factory.createArray<double>({_n,1}));
                     matlab::data::TypedArray<double> dualubs(factory.createArray<double>({_n,1}));
-                    tnlp_adapter->ResortBnds(   *ip_data->curr()->z_L(), buffer_.get(),
+                    tnlp_adapter->ResortBounds(   *ip_data->curr()->z_L(), buffer_.get(),
                                                 *ip_data->curr()->z_U(), buffer_.get() + _n);
                     for (auto i = 0; i<_n; i++) {
                         duallbs[i] = buffer_[i];
