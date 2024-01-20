@@ -21,10 +21,7 @@ public:
         return 0;
     }
 
-    bool operator==(const Buffer& other) const
-    {
-        return false;
-    }
-
-    Buffer(const matlab::data::ArrayFactory& factory) = delete;
+    Buffer(const Buffer&) = delete;
+    Buffer(Buffer&&) = delete;
+    Buffer operator=(const Buffer&) = delete;
 };
