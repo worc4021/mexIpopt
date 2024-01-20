@@ -40,21 +40,21 @@ protected:
     // These functions override the functions in the Journal class.
     virtual
     void
-    PrintImpl( Ipopt::EJournalCategory category,
-            Ipopt::EJournalLevel    level,
-            char const *     str) {
+    PrintImpl(  [[maybe_unused]]Ipopt::EJournalCategory category,
+                [[maybe_unused]]Ipopt::EJournalLevel    level,
+                char const *     str) {
         cout << std::string(str);
     }
 
     virtual
     void
-    PrintfImpl( Ipopt::EJournalCategory category,
-                Ipopt::EJournalLevel    level,
+    PrintfImpl( [[maybe_unused]]Ipopt::EJournalCategory category,
+                [[maybe_unused]]Ipopt::EJournalLevel    level,
                 char const *     pformat,
                 va_list ap ) {
-                    char buffer[1000];
-                    vsnprintf(buffer, 1000, pformat, ap);
-                    cout << std::string(buffer);
+                    char _buffer[1000];
+                    vsnprintf(_buffer, 1000, pformat, ap);
+                    cout << std::string(_buffer);
                 }
 
     virtual
@@ -65,11 +65,11 @@ protected:
 
 public:
 
-    MatlabJournal() = default;
-
+    MatlabJournal() = delete;
+    MatlabJournal(const MatlabJournal&) = delete;
     MatlabJournal(const Buffer& buffer, const std::ostream& cout) = delete;
 
-    bool operator==(const MatlabJournal& other) const = delete;
+    MatlabJournal operator=(const MatlabJournal& other) = delete;
 };
 
 
@@ -78,21 +78,21 @@ class myNLP
 {
 private:
     
+    std::size_t _n{};
+    std::size_t _m{};
+    bool isinitialised{ false };
+    bool returnHessian{ false };
+    bool intermediateCallback{ false };
+    bool diagnosticPrintout{ false };
     matlab::data::ArrayFactory factory;
     matlab::data::StructArray funcs;
     matlab::data::StructArray options;
     matlab::data::StructArray retStr;
-    std::size_t _n;
-    std::size_t _m;
     std::vector<matlab::data::TypedArray<double>> args;
-    bool isinitialised;
-    bool returnHessian;
-    bool intermediateCallback;
-    bool diagnosticPrintout;
     Buffer buffer;
     std::ostream stream;
-    utilities::Sparse<double> _jac;
-    utilities::Sparse<double> _hes;
+    utilities::Sparse<double> _jac{};
+    utilities::Sparse<double> _hes{};
 
     matlab::data::TypedArray<double> _x;
     matlab::data::TypedArray<double> _sigma;
@@ -160,20 +160,27 @@ private:
         case Ipopt::UNASSIGNED:
             retVal = "UNASSIGNED";
             break;
+        case Ipopt::WALLTIME_EXCEEDED:
+            retVal = "WALLTIME_EXCEEDED";
+            break;
         default:
+            retVal = "UNKOWN";
             break;
         }
         return retVal;
     }
 
 public:
-    /** default constructor */
-    myNLP() : isinitialised(false), returnHessian(true), intermediateCallback(false),
+    
+    myNLP(const myNLP&) = delete;
+    myNLP operator=(const myNLP&) = delete;
+
+    myNLP() : _n(0), _m(0), isinitialised(false), returnHessian(true), intermediateCallback(false), diagnosticPrintout(false),
         funcs(factory.createStructArray({0,0},{})),
         options(factory.createStructArray({0,0},{})),
         retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval"})), // Make sure the structure is always available
         stream(&buffer), 
-        diagnosticPrintout(false),_jac(),_hes(),_x(factory.createArray<double>({0,1})), _sigma(factory.createScalar(1.)),_lambda(factory.createArray<double>({0,1}))
+        _jac(),_hes(),_x(factory.createArray<double>({0,1})), _sigma(factory.createScalar(1.)),_lambda(factory.createArray<double>({0,1}))
     {
         retStr[0]["eval"] = factory.createStructArray({1,1},{"objective","constraints","gradient","jacobian","hessian"});
         matlab::data::StructArrayRef evals = retStr[0]["eval"];
@@ -185,7 +192,7 @@ public:
         retStr[0]["iter"] = factory.createScalar<int>(0);
         retStr[0]["cpu"] = factory.createScalar<double>(0.);
         retStr[0]["objective"] = factory.createScalar<double>(NAN);
-    };
+    }
 
     matlab::data::TypedArray<double> getX(void) {
         return _x;
@@ -248,12 +255,12 @@ public:
         if (diagnosticPrintout)
             stream << "Enter get_nlp_info" << std::endl;
         index_style = Ipopt::TNLP::C_STYLE;
-        n = _x.getNumberOfElements();
-        _n = n;
+        n = static_cast<Ipopt::Index>(_x.getNumberOfElements());
+        _n = _x.getNumberOfElements();
 
         matlab::data::TypedArray<double> cu = utilities::getfield(options,"cu");
-        m = cu.getNumberOfElements();
-        _m = m;
+        m = static_cast<Ipopt::Index>(cu.getNumberOfElements());
+        _m = cu.getNumberOfElements();
         
         // Initialise return arrays in case things fail.
         retStr[0]["z_L"] = factory.createArray<double>({static_cast<size_t>(n),1});
@@ -272,10 +279,10 @@ public:
         matlab::data::SparseArray<double> jacobian = std::move(jacStrOut[0]);
         _jac.set(jacobian);
         
-        if (_jac.getNumberOfColumns() != n || _jac.getNumberOfRows() != m)
-            utilities::error("Jacobian structure must be {} x {}, passed matrix is {} x {}", m, n, _jac.getNumberOfRows(), _jac.getNumberOfColumns());
+        if (_jac.getNumberOfColumns() != _n || _jac.getNumberOfRows() != _m)
+            utilities::error("Jacobian structure must be {} x {}, passed matrix is {} x {}", _m, _n, _jac.getNumberOfRows(), _jac.getNumberOfColumns());
 
-        nnz_jac_g = _jac.getNumberOfNonZeroElements();
+        nnz_jac_g = static_cast<Ipopt::Index>(_jac.getNumberOfNonZeroElements());
 
         if (returnHessian){
             std::vector<matlab::data::Array> hesStrOut = utilities::feval(funcs[0]["hessianstructure"],1,nullArgs);
@@ -284,20 +291,20 @@ public:
             }
             matlab::data::SparseArray<double> hessian = std::move(hesStrOut[0]);
             _hes.set(hessian);
-            if (_hes.getNumberOfColumns() != n || _hes.getNumberOfRows() != _hes.getNumberOfColumns())
-                utilities::error("Hessian structure must be {} x {}, passed matrix is {} x {}", n, n, _hes.getNumberOfRows(), _hes.getNumberOfColumns());
+            if (_hes.getNumberOfColumns() != _n || _hes.getNumberOfRows() != _hes.getNumberOfColumns())
+                utilities::error("Hessian structure must be {} x {}, passed matrix is {} x {}", _n, _n, _hes.getNumberOfRows(), _hes.getNumberOfColumns());
 
-            nnz_h_lag = _hes.getNumberOfNonZeroElements();
+            nnz_h_lag = static_cast<Ipopt::Index>(_hes.getNumberOfNonZeroElements());
         }
         if (diagnosticPrintout)
             stream << "Exit get_nlp_info" << std::endl;
 
         return true;
-    };
+    }
 
   /** Method to return the bounds for my problem */
-  bool get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
-                Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) 
+  bool get_bounds_info([[maybe_unused]]Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
+                [[maybe_unused]]Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) 
     {
         if (diagnosticPrintout)
             stream << "Enter get_bounds_info" << std::endl;
@@ -306,12 +313,14 @@ public:
         matlab::data::TypedArray<double> gl = utilities::getfield(options,"cl");
         matlab::data::TypedArray<double> gu = utilities::getfield(options,"cu");
 
-        if (xl.getNumberOfElements() != n)
-            utilities::error("Size mismatch: lower bound on x has {} elements whereas x0 has {}.", xl.getNumberOfElements(), n);
-        if (xu.getNumberOfElements() != n)
-            utilities::error("Size mismatch: upper bound on x has {} elements whereas x0 has {}.", xu.getNumberOfElements(), n);
-        if (gl.getNumberOfElements() != gu.getNumberOfElements())
-            utilities::error("Size mismatch: Lower bound on constraints has {} elements whereas upper bound has {}.", gl.getNumberOfElements(), gu.getNumberOfElements());
+        if (xl.getNumberOfElements() != _n)
+            utilities::error("Size mismatch: Lower bound on x has {} elements whereas x0 has {}.", xl.getNumberOfElements(), _n);
+        if (xu.getNumberOfElements() != _n)
+            utilities::error("Size mismatch: Upper bound on x has {} elements whereas x0 has {}.", xu.getNumberOfElements(), _n);
+        if (gl.getNumberOfElements() != _m)
+            utilities::error("Size mismatch: Lower bound on constraints has {} elements whereas {} are expected.", gl.getNumberOfElements(), _m);
+        if (gu.getNumberOfElements() != _m)
+            utilities::error("Size mismatch: Upper bound on constraints has {} elements whereas {} are expected.", gu.getNumberOfElements(), _m);
 
         std::copy(xl.cbegin(), xl.cend(), x_l);
         std::copy(xu.cbegin(), xu.cend(), x_u);
@@ -321,7 +330,7 @@ public:
         if (diagnosticPrintout)
             stream << "Exit get_bounds_info" << std::endl;    
         return true;
-    };
+    }
 
   /** Method to return the starting point for the algorithm */
   bool get_starting_point(  Ipopt::Index n, bool init_x, Ipopt::Number* x,
@@ -351,10 +360,10 @@ public:
         stream << "n: " << n << " init_x: " << init_x << " init_z " << init_z << " m: " << m << " init lambda " << init_lambda << std::endl;
 
     return true;
-};
+}
 
   /** Method to return the objective value */
-  bool eval_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number& obj_value){
+  bool eval_f([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number& obj_value){
     if (diagnosticPrintout)
         stream << "Enter eval_f" << std::endl;
     
@@ -369,10 +378,10 @@ public:
         stream << "Exit eval_f" << std::endl;
 
     return true;
-  };
+  }
 
   /** Method to return the gradient of the objective */
-  bool eval_grad_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number* grad_f) {
+  bool eval_grad_f([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number* grad_f) {
     if (diagnosticPrintout)
         stream << "Enter eval_grad_f" << std::endl;
 
@@ -381,8 +390,8 @@ public:
 
     matlab::data::TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"]);
 
-    if (gradOut.getNumberOfElements() != n)
-        utilities::error("Size mismatch: gradient callback returned {} elements, whereas {} are expected.", gradOut.getNumberOfElements(), n);
+    if (gradOut.getNumberOfElements() != _n)
+        utilities::error("Size mismatch: gradient callback returned {} elements, whereas {} are expected.", gradOut.getNumberOfElements(), _n);
 
     std::copy(gradOut.cbegin(), gradOut.cend(), grad_f);
 
@@ -390,10 +399,10 @@ public:
         stream << "Exit eval_grad_f" << std::endl;
 
     return true;
-  };
+  }
 
   /** Method to return the constraint residuals */
-  bool eval_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Index m, Ipopt::Number* g) {
+  bool eval_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new_x, [[maybe_unused]]Ipopt::Index m, Ipopt::Number* g) {
 
     if (diagnosticPrintout)
         stream << "Enter eval_g" << std::endl;
@@ -403,8 +412,8 @@ public:
 
     matlab::data::TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"]);
     
-    if (constOut.getNumberOfElements() != m)
-        utilities::error("Size mismatch: constraint callback returned {} elements, whereas {} are expected.", constOut.getNumberOfElements(), m);
+    if (constOut.getNumberOfElements() != _m)
+        utilities::error("Size mismatch: constraint callback returned {} elements, whereas {} are expected.", constOut.getNumberOfElements(), _m);
 
     std::copy(constOut.cbegin(), constOut.cend(), g);
     
@@ -412,14 +421,14 @@ public:
         stream << "Exit eval_g" << std::endl;
 
     return true;
-  };
+  }
 
   /** Method to return:
    *   1) The structure of the jacobian (if "values" is NULL)
    *   2) The values of the jacobian (if "values" is not NULL)
    */
-bool eval_jac_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
-            Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index *jCol,
+bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+            [[maybe_unused]]Ipopt::Index m, [[maybe_unused]]Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index *jCol,
             Ipopt::Number* values) 
 {
 if (diagnosticPrintout)
@@ -440,15 +449,15 @@ if (diagnosticPrintout)
     if (diagnosticPrintout)
         stream << "Exit eval_jac_g" << std::endl;
     return true;
-};
+}
 
   /** Method to return:
    *   1) The structure of the hessian of the lagrangian (if "values" is NULL)
    *   2) The values of the hessian of the lagrangian (if "values" is not NULL)
    */
-  bool eval_h(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
-                      Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda,
-                      bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow,
+  bool eval_h([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+                      Ipopt::Number obj_factor, [[maybe_unused]]Ipopt::Index m, const Ipopt::Number* lambda,
+                      bool new_lambda, [[maybe_unused]]Ipopt::Index nele_hess, Ipopt::Index* iRow,
                       Ipopt::Index* jCol, Ipopt::Number* values) 
         {
         if (diagnosticPrintout)
@@ -463,8 +472,8 @@ if (diagnosticPrintout)
                     updateX(x);
                 // No point providing a more formal mechanism to update things that are only used in here.
                 _sigma = factory.createScalar(obj_factor);
-                
-                std::copy(lambda, lambda + m, _lambda.begin());
+                if (new_lambda)
+                    std::copy(lambda, lambda + _m, _lambda.begin());
 
                 std::vector<matlab::data::Array> hessianArgs{
                     _x, 
@@ -480,7 +489,7 @@ if (diagnosticPrintout)
             if (diagnosticPrintout)
                 stream << "Exit eval_h" << std::endl;
             return true;
-        };
+        }
 
   //@}
 
@@ -494,9 +503,9 @@ if (diagnosticPrintout)
                                 Ipopt::Number regularization_size, 
                                 Ipopt::Number alpha_du, 
                                 Ipopt::Number alpha_pr, 
-                                Ipopt::Index ls_trials, 
-                                const Ipopt::IpoptData* ip_data, 
-                                Ipopt::IpoptCalculatedQuantities* ip_cq) 
+                                [[maybe_unused]]Ipopt::Index ls_trials, 
+                                [[maybe_unused]]const Ipopt::IpoptData* ip_data, 
+                                [[maybe_unused]]Ipopt::IpoptCalculatedQuantities* ip_cq) 
     {
     if (diagnosticPrintout)
         stream << "Enter intermediate_callback" << std::endl;
@@ -524,7 +533,8 @@ if (diagnosticPrintout)
                                 "d_norm",
                                 "regularization_size",
                                 "alpha_du",
-                                "alpha_pr"
+                                "alpha_pr",
+                                "mode"
                             }
                             );
                     
@@ -551,9 +561,10 @@ if (diagnosticPrintout)
                     passVal[0]["regularization_size"] = factory.createScalar(regularization_size);
                     passVal[0]["alpha_du"] = factory.createScalar(alpha_du);
                     passVal[0]["alpha_pr"] = factory.createScalar(alpha_pr);
+                    passVal[0]["mode"] = factory.createScalar(std::string(mode == Ipopt::AlgorithmMode::RegularMode ? "regular" : "restoration"));
 
-                    std::vector<matlab::data::Array> args{passVal};
-                    std::vector<matlab::data::Array> retVal = utilities::feval(funcs[0]["intermediate"],1,args);
+                    std::vector<matlab::data::Array> intermediateArgs{passVal};
+                    std::vector<matlab::data::Array> retVal = utilities::feval(funcs[0]["intermediate"],1, intermediateArgs);
 
                     matlab::data::TypedArray<bool> retValue = std::move(retVal[0]);
                     
@@ -579,11 +590,11 @@ if (diagnosticPrintout)
   /** @name Solution Methods */
   //@{
   /** This method is called when the algorithm is complete so the TNLP can store/write the solution */
-  void finalize_solution(   Ipopt::SolverReturn status,
-                            Ipopt::Index n, const Ipopt::Number* x, const Ipopt::Number* z_L, const Ipopt::Number* z_U,
-                            Ipopt::Index m, const Ipopt::Number* g, const Ipopt::Number* lambda,
-                            Ipopt::Number obj_value, const Ipopt::IpoptData* ip_data,
-				            Ipopt::IpoptCalculatedQuantities* ip_cq) 
+  void finalize_solution(   [[maybe_unused]]Ipopt::SolverReturn status,
+                            [[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, const Ipopt::Number* z_L, const Ipopt::Number* z_U,
+                            [[maybe_unused]]Ipopt::Index m, [[maybe_unused]]const Ipopt::Number* g, const Ipopt::Number* lambda,
+                            [[maybe_unused]]Ipopt::Number obj_value, [[maybe_unused]]const Ipopt::IpoptData* ip_data,
+				            [[maybe_unused]]Ipopt::IpoptCalculatedQuantities* ip_cq) 
     {
         if (diagnosticPrintout)
             stream << "Enter finalize_solution" << std::endl;
@@ -594,15 +605,17 @@ if (diagnosticPrintout)
         matlab::data::TypedArrayRef<double> zU = retStr[0]["z_U"];
         matlab::data::TypedArrayRef<double> lam = retStr[0]["lambda"];
 
-        std::copy(z_L, z_L + n, zL.begin());
-        std::copy(z_U, z_U + n, zU.begin());
-        std::copy(lambda, lambda + m, lam.begin());
+        std::copy(z_L, z_L + _n, zL.begin());
+        std::copy(z_U, z_U + _n, zU.begin());
+        std::copy(lambda, lambda + _m, lam.begin());
         
         if (diagnosticPrintout)
             stream << "Exit finalize_solution" << std::endl;
 
-        };
+    }
+
   //@}
 
   bool operator==(const myNLP& other) const = delete;
+
 };
