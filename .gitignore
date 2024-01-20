@@ -38,3 +38,5 @@
 
 vcpkg
 build
+.vs
+.vscode
