@@ -4,26 +4,6 @@
 #include "stream.hpp"
 #include "nlp.hpp"
 
-struct evals {
-    int objective;
-    int constraints;
-    int gradient;
-    int jacobian;
-    int hessian;
-};
-
-struct MatlabInfo {
-    std::unique_ptr<Ipopt::Number[]> x;
-    int status;
-    std::unique_ptr<Ipopt::Number[]> zl;
-    std::unique_ptr<Ipopt::Number[]> zu;
-    std::unique_ptr<Ipopt::Number[]> lambda;
-    int iter;
-    Ipopt::Number cpu;
-    Ipopt::Number objective;
-    evals eval;
-};
-
 class MexFunction 
     : public matlab::mex::Function {
 private:
@@ -31,7 +11,7 @@ private:
     std::ostream cout;
     matlab::data::ArrayFactory factory;
     
-    void setSingleOption(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, std::string name, const matlab::data::Array& option){
+    void setSingleOption(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, std::string name, matlab::data::Array& option){
         if (utilities::isnumeric(option)){
             matlab::data::TypedArray<double> opt(std::move(option));
             if (utilities::isscalarinteger(opt)){
@@ -102,7 +82,7 @@ public:
             } 
         }
 
-        MatlabInfo infoStruct;
+        
 
         Ipopt::ApplicationReturnStatus status;
         status = app->Initialize();
@@ -123,16 +103,16 @@ public:
 
             if (Ipopt::IsValid(app->Statistics())) {
                 matlab::data::TypedArrayRef<double> objective = info[0]["objective"];
-                objective[0] = app->Statistics()->FinalObjective();
                 matlab::data::TypedArrayRef<double> cpu = info[0]["cpu"];
-                cpu[0] = app->Statistics()->TotalCpuTime();
                 matlab::data::TypedArrayRef<int> iter = info[0]["iter"];
-                iter[0] = app->Statistics()->IterationCount();
                 matlab::data::TypedArrayRef<int> objectiveCalls = evals[0]["objective"];
                 matlab::data::TypedArrayRef<int> constraintCalls = evals[0]["constraints"];
                 matlab::data::TypedArrayRef<int> gradientCalls = evals[0]["gradient"];
                 matlab::data::TypedArrayRef<int> jacobianCalls = evals[0]["jacobian"];
                 matlab::data::TypedArrayRef<int> hessianCalls = evals[0]["hessian"];
+                objective[0] = app->Statistics()->FinalObjective();
+                cpu[0] = app->Statistics()->TotalCpuTime();
+                iter[0] = app->Statistics()->IterationCount();
                 app->Statistics()->NumberOfEvaluations( objectiveCalls[0],
                                                         constraintCalls[0],
                                                         gradientCalls[0],
@@ -146,4 +126,7 @@ public:
         }
 
     }
+    MexFunction(const MexFunction&) = delete;
+    MexFunction(MexFunction&&) = delete;
+    MexFunction operator=(const MexFunction&) = delete;
 };
