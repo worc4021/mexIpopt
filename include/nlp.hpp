@@ -1,5 +1,6 @@
 #pragma once
 #include "utilities.hpp"
+#include "sparse.hpp"
 #include "stream.hpp"
 
 #include "IpTNLP.hpp"
@@ -62,6 +63,13 @@ protected:
         cout.flush();
     }
 
+public:
+
+    MatlabJournal() = default;
+
+    MatlabJournal(const Buffer& buffer, const std::ostream& cout) = delete;
+
+    bool operator==(const MatlabJournal& other) const = delete;
 };
 
 
@@ -76,31 +84,25 @@ private:
     matlab::data::StructArray retStr;
     std::size_t _n;
     std::size_t _m;
-    std::vector<matlab::data::Array> args;
+    std::vector<matlab::data::TypedArray<double>> args;
     bool isinitialised;
     bool returnHessian;
     bool intermediateCallback;
     bool diagnosticPrintout;
     Buffer buffer;
     std::ostream stream;
+    utilities::Sparse<double> _jac;
+    utilities::Sparse<double> _hes;
 
-    std::vector<matlab::data::Array> feval(
-            const matlab::data::Array &handle, 
-            const std::size_t numReturned, 
-            const std::vector<matlab::data::Array> &arguments
-            ) {
-        std::vector<matlab::data::Array> theArgs({handle});
-        theArgs.insert(theArgs.end(), arguments.begin(), arguments.end());
-        return matlabPtr->feval(
-            matlab::engine::convertUTF8StringToUTF16String("feval"),
-            numReturned,
-            theArgs
-        );
-    }
+    matlab::data::TypedArray<double> _x;
+    matlab::data::TypedArray<double> _sigma;
+    matlab::data::TypedArray<double> _lambda;
+    
 
     void updateX(const Ipopt::Number *x){
-        for (auto i = 0 ; i < args[0].getNumberOfElements(); i++)
-            args[0][i] = x[i];
+        std::size_t i = 0;
+        for (auto &elem : _x)
+            elem = x[i++];
     }
 
     std::string getStatus(Ipopt::SolverReturn status){
@@ -171,8 +173,7 @@ public:
         options(factory.createStructArray({0,0},{})),
         retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval"})), // Make sure the structure is always available
         stream(&buffer), 
-        args({factory.createEmptyArray()}),
-        diagnosticPrintout(false) 
+        diagnosticPrintout(false),_jac(),_hes(),_x(factory.createArray<double>({0,1})), _sigma(factory.createScalar(1.)),_lambda(factory.createArray<double>({0,1}))
     {
         retStr[0]["eval"] = factory.createStructArray({1,1},{"objective","constraints","gradient","jacobian","hessian"});
         matlab::data::StructArrayRef evals = retStr[0]["eval"];
@@ -187,7 +188,7 @@ public:
     };
 
     matlab::data::TypedArray<double> getX(void) {
-        return args[0];
+        return _x;
     };
 
     matlab::data::StructArray getInfo(void) {
@@ -199,11 +200,11 @@ public:
             matlab::data::StructArray& _funcs, 
             matlab::data::StructArray& _options
         ) {
+        
+        _x = std::move(_x0);
 
-        args[0] = _x0;
-
-        funcs = _funcs;
-        options = _options;
+        funcs = std::move(_funcs);
+        options = std::move(_options);
 
         if (utilities::isfield(options, "ipopt")){
             matlab::data::StructArray ipoptStr = options[0]["ipopt"];
@@ -227,7 +228,7 @@ public:
         if (diagnosticPrintout)
             stream << "Enter fevalWithX" << std::endl;
 
-        std::vector<matlab::data::Array> retVal = feval(handle, 1, args);
+        std::vector<matlab::data::Array> retVal = utilities::feval(handle, 1, {_x});
         if (diagnosticPrintout)
             stream << "Exit fevalWithX" << std::endl;
         return retVal[0];
@@ -243,13 +244,14 @@ public:
   bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
                     Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style) 
     {
+      // Robustify this process by a huge margin! Hold an internal representation to verify that the dimensions of all passed arguments work for all function handles.
         if (diagnosticPrintout)
             stream << "Enter get_nlp_info" << std::endl;
-        index_style = C_STYLE;
-        n = args[0].getNumberOfElements();
+        index_style = Ipopt::TNLP::C_STYLE;
+        n = _x.getNumberOfElements();
         _n = n;
 
-        matlab::data::TypedArray<double> cu = options[0]["cu"];
+        matlab::data::TypedArray<double> cu = utilities::getfield(options,"cu");
         m = cu.getNumberOfElements();
         _m = m;
         
@@ -259,25 +261,33 @@ public:
         retStr[0]["lambda"] = factory.createArray<double>({static_cast<size_t>(m),1});
         
 
-        std::vector<matlab::data::Array> nullArgs = {};
+        std::vector<matlab::data::Array> nullArgs{};
 
-        std::vector<matlab::data::Array> jacStrOut = feval(funcs[0]["jacobianstructure"], 1, nullArgs);
+        std::vector<matlab::data::Array> jacStrOut = utilities::feval(funcs[0]["jacobianstructure"], 1, nullArgs);
         
-        if ( !utilities::issparse(jacStrOut[0]) ) {
-            utilities::error("Jacobian has to be sparse");
+        if ( !utilities::issparse(jacStrOut[0])) {
+            utilities::error("Jacobian pattern must be sparse matrix");
         }
 
-        matlab::data::SparseArray<double> Jac = std::move(jacStrOut[0]);
+        matlab::data::SparseArray<double> jacobian = std::move(jacStrOut[0]);
+        _jac.set(jacobian);
+        
+        if (_jac.getNumberOfColumns() != n || _jac.getNumberOfRows() != m)
+            utilities::error("Jacobian structure must be {} x {}, passed matrix is {} x {}", m, n, _jac.getNumberOfRows(), _jac.getNumberOfColumns());
 
-        nnz_jac_g = Jac.getNumberOfNonZeroElements();
+        nnz_jac_g = _jac.getNumberOfNonZeroElements();
 
         if (returnHessian){
-            std::vector<matlab::data::Array> hesStrOut = feval(funcs[0]["hessianstructure"],1,nullArgs);
-            if ( !utilities::issparse(hesStrOut[0]) ) {
-                utilities::error("Hessian has to be sparse");
+            std::vector<matlab::data::Array> hesStrOut = utilities::feval(funcs[0]["hessianstructure"],1,nullArgs);
+            if ( !utilities::issparse(hesStrOut[0])) {
+                utilities::error("Hessian pattern must be sparse matrix");
             }
-            matlab::data::SparseArray<double> Hes = std::move(hesStrOut[0]);
-            nnz_h_lag = Hes.getNumberOfNonZeroElements();
+            matlab::data::SparseArray<double> hessian = std::move(hesStrOut[0]);
+            _hes.set(hessian);
+            if (_hes.getNumberOfColumns() != n || _hes.getNumberOfRows() != _hes.getNumberOfColumns())
+                utilities::error("Hessian structure must be {} x {}, passed matrix is {} x {}", n, n, _hes.getNumberOfRows(), _hes.getNumberOfColumns());
+
+            nnz_h_lag = _hes.getNumberOfNonZeroElements();
         }
         if (diagnosticPrintout)
             stream << "Exit get_nlp_info" << std::endl;
@@ -291,22 +301,22 @@ public:
     {
         if (diagnosticPrintout)
             stream << "Enter get_bounds_info" << std::endl;
-        matlab::data::TypedArray<double> xl = std::move(options[0]["lb"]);
-        matlab::data::TypedArray<double> xu = std::move(options[0]["ub"]);
-        matlab::data::TypedArray<double> gl = std::move(options[0]["cl"]);
-        matlab::data::TypedArray<double> gu = std::move(options[0]["cu"]);
+        matlab::data::TypedArray<double> xl = utilities::getfield(options,"lb");
+        matlab::data::TypedArray<double> xu = utilities::getfield(options,"ub");
+        matlab::data::TypedArray<double> gl = utilities::getfield(options,"cl");
+        matlab::data::TypedArray<double> gu = utilities::getfield(options,"cu");
 
-        for (auto i=0; i<n; i++)
-            x_l[i] = xl[i];
+        if (xl.getNumberOfElements() != n)
+            utilities::error("Size mismatch: lower bound on x has {} elements whereas x0 has {}.", xl.getNumberOfElements(), n);
+        if (xu.getNumberOfElements() != n)
+            utilities::error("Size mismatch: upper bound on x has {} elements whereas x0 has {}.", xu.getNumberOfElements(), n);
+        if (gl.getNumberOfElements() != gu.getNumberOfElements())
+            utilities::error("Size mismatch: Lower bound on constraints has {} elements whereas upper bound has {}.", gl.getNumberOfElements(), gu.getNumberOfElements());
 
-        for (auto i=0; i<n; i++)
-            x_u[i] = xu[i];
-
-        for (auto i=0; i<m; i++)
-            g_l[i] = gl[i];
-
-        for (auto i=0; i<m; i++)
-            g_u[i] = gu[i];
+        std::copy(xl.cbegin(), xl.cend(), x_l);
+        std::copy(xu.cbegin(), xu.cend(), x_u);
+        std::copy(gl.cbegin(), gl.cend(), g_l);
+        std::copy(gu.cbegin(), gu.cend(), g_u);
             
         if (diagnosticPrintout)
             stream << "Exit get_bounds_info" << std::endl;    
@@ -322,17 +332,15 @@ public:
     if (diagnosticPrintout)
         stream << "Enter get_starting_point" << std::endl;
     if (init_x){
-        for (auto i=0; i<n; i++)
-            x[i] = args[0][i];
+        std::copy(_x.cbegin(), _x.cend(), x);
     }
     if (init_z){
-        for (auto i=0; i<n; i++){
-            z_L[i] = 0.;
-            z_U[i] = 0.;
-        }
+        // We should be able to warmstart duals on the decision variable
+        std::fill(z_L, z_L + n, 0.);
+        std::fill(z_U, z_U + n, 0.);
+        // as well as the constrain multipliers. Figure out a way of passing them in!
         if (init_lambda) {
-            for (auto i=0; i<m; i++)
-                lambda[i] = 0.;
+            std::fill(lambda, lambda + m, 0.);
         }
     }
 
@@ -373,8 +381,10 @@ public:
 
     matlab::data::TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"]);
 
-    for (auto i = 0; i < n; i++)
-        grad_f[i] = gradOut[i];
+    if (gradOut.getNumberOfElements() != n)
+        utilities::error("Size mismatch: gradient callback returned {} elements, whereas {} are expected.", gradOut.getNumberOfElements(), n);
+
+    std::copy(gradOut.cbegin(), gradOut.cend(), grad_f);
 
     if (diagnosticPrintout)
         stream << "Exit eval_grad_f" << std::endl;
@@ -393,8 +403,10 @@ public:
 
     matlab::data::TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"]);
     
-    for (auto i = 0; i < m; i++)
-        g[i] = constOut[i];
+    if (constOut.getNumberOfElements() != m)
+        utilities::error("Size mismatch: constraint callback returned {} elements, whereas {} are expected.", constOut.getNumberOfElements(), m);
+
+    std::copy(constOut.cbegin(), constOut.cend(), g);
     
     if (diagnosticPrintout)
         stream << "Exit eval_g" << std::endl;
@@ -414,30 +426,16 @@ if (diagnosticPrintout)
     stream << "Enter eval_jac_g" << std::endl;
     
     if (nullptr == values){
-        matlab::data::Array jacobianStructure = funcs[0]["jacobianstructure"];
-        std::vector<matlab::data::Array> args(0);
-        std::vector<matlab::data::Array> jacStrOut = feval(jacobianStructure, 1, args);
-
-        matlab::data::SparseArray<double> JacobianStr(std::move(jacStrOut[0]));
-
-        auto i = 0;
-        for (matlab::data::TypedIterator<double> it = JacobianStr.begin(); it != JacobianStr.end(); it++){
-            iRow[i] = JacobianStr.getIndex(it).first;
-            jCol[i] = JacobianStr.getIndex(it).second;
-            i++;
-        }
-
+        _jac.iRow(iRow);
+        _jac.jCol(jCol);
     } else {
 
         if (new_x) 
             updateX(x);
 
-        matlab::data::SparseArray<double> Jacobian = fevalWithX(funcs[0]["jacobian"]);
-        auto i = 0;
-        for (auto& elem : Jacobian){
-            values[i] = elem;
-            i++;
-        }
+        matlab::data::SparseArray<double> jVals = fevalWithX(funcs[0]["jacobian"]);
+        _jac.updateValues(jVals);
+        _jac.val(values);
     }
     if (diagnosticPrintout)
         stream << "Exit eval_jac_g" << std::endl;
@@ -457,34 +455,27 @@ if (diagnosticPrintout)
             stream << "Enter eval_h" << std::endl;
 
             if (nullptr == values){
-                matlab::data::Array hessianStructure = funcs[0]["hessianstructure"];
-                std::vector<matlab::data::Array> args(0);
-                std::vector<matlab::data::Array> hesStrOut = feval(hessianStructure, 1, args);
-                matlab::data::SparseArray<double> HessianStr(std::move(hesStrOut[0]));
-                auto i = 0;
-                for (matlab::data::TypedIterator<double> it = HessianStr.begin(); it != HessianStr.end(); it++){
-                    iRow[i] = HessianStr.getIndex(it).first;
-                    jCol[i] = HessianStr.getIndex(it).second;
-                    i++;
-                }
+                _hes.iRow(iRow);
+                _hes.jCol(jCol);
+                _lambda = factory.createArray<double>({ _hes.getNumberOfColumns(),1});
             } else {
                 if (new_x) 
                     updateX(x);
+                // No point providing a more formal mechanism to update things that are only used in here.
+                _sigma = factory.createScalar(obj_factor);
+                
+                std::copy(lambda, lambda + m, _lambda.begin());
 
-                std::vector<matlab::data::Array> hessianArgs = {
-                    args[0], 
-                    factory.createScalar(obj_factor), 
-                    factory.createArray<double>({static_cast<size_t>(m),1}, lambda, lambda + m)
+                std::vector<matlab::data::Array> hessianArgs{
+                    _x, 
+                    _sigma,
+                    _lambda
                 };
 
-
-                std::vector<matlab::data::Array> retVals = feval(funcs[0]["hessian"], 1, hessianArgs);
-                matlab::data::SparseArray<double> Hessian = std::move(retVals[0]);
-                auto i = 0;
-                for (auto& elem : Hessian){
-                    values[i] = elem;
-                    i++;
-                }
+                std::vector<matlab::data::Array> retVals = utilities::feval(funcs[0]["hessian"], 1, hessianArgs);
+                matlab::data::SparseArray<double> hessian = std::move(retVals[0]);
+                _hes.updateValues(hessian);
+                _hes.val(values);
             }
             if (diagnosticPrintout)
                 stream << "Exit eval_h" << std::endl;
@@ -537,32 +528,20 @@ if (diagnosticPrintout)
                             }
                             );
                     
-                    std::unique_ptr<double[]> buffer_(new double[std::max(2*_n,_m)]);
+                    matlab::data::buffer_ptr_t<double> primals_p = factory.createBuffer<double>(_n);
+                    matlab::data::buffer_ptr_t<double> duals_p = factory.createBuffer<double>(_m);
+                    matlab::data::buffer_ptr_t<double> duallbs_p = factory.createBuffer<double>(_n);
+                    matlab::data::buffer_ptr_t<double> dualubs_p = factory.createBuffer<double>(_n);
                     
-                    matlab::data::TypedArray<double> primals(factory.createArray<double>({_n,1}));
-                    // Weird construct required as x.release.get() somehow kills the mex
-                    tnlp_adapter->ResortX(*ip_data->curr()->x(), buffer_.get() );
-                    for (auto i = 0; i<_n ; i ++)
-                        primals[i] = buffer_[i];
-                    passVal[0]["primals"] = std::move(primals);
+                    tnlp_adapter->ResortX(*ip_data->curr()->x(), primals_p.get() );
+                    tnlp_adapter->ResortG(*ip_data->curr()->y_c(), *ip_data->curr()->y_d(), duals_p.get() );
+                    tnlp_adapter->ResortBounds(   *ip_data->curr()->z_L(), duallbs_p.get(),
+                                                *ip_data->curr()->z_U(), dualubs_p.get());
 
-                    matlab::data::TypedArray<double> duals(factory.createArray<double>({_m,1}));
-                    tnlp_adapter->ResortG(*ip_data->curr()->y_c(), *ip_data->curr()->y_d(), buffer_.get() );
-                    for (auto i = 0; i<_m; i++)
-                        duals[i] = buffer_[i];
-                    passVal[0]["duals"]  = std::move(duals);
-
-
-                    matlab::data::TypedArray<double> duallbs(factory.createArray<double>({_n,1}));
-                    matlab::data::TypedArray<double> dualubs(factory.createArray<double>({_n,1}));
-                    tnlp_adapter->ResortBounds(   *ip_data->curr()->z_L(), buffer_.get(),
-                                                *ip_data->curr()->z_U(), buffer_.get() + _n);
-                    for (auto i = 0; i<_n; i++) {
-                        duallbs[i] = buffer_[i];
-                        dualubs[i] = buffer_[i+_n];
-                    }
-                    passVal[0]["duallbs"] = std::move(duallbs);
-                    passVal[0]["dualubs"] = std::move(dualubs);
+                    passVal[0]["primals"] = factory.createArrayFromBuffer<double>({ _n,1 }, std::move(primals_p));
+                    passVal[0]["duals"] = factory.createArrayFromBuffer<double>({ _m,1 }, std::move(duals_p));
+                    passVal[0]["duallbs"] = factory.createArrayFromBuffer<double>({ _n,1 }, std::move(duallbs_p));
+                    passVal[0]["dualubs"] = factory.createArrayFromBuffer<double>({ _n,1 }, std::move(dualubs_p));
                     passVal[0]["iter"] = factory.createScalar(static_cast<double>(iter));
                     passVal[0]["obj_value"] = factory.createScalar(obj_value);
                     passVal[0]["inf_pr"] = factory.createScalar(inf_pr);
@@ -573,8 +552,8 @@ if (diagnosticPrintout)
                     passVal[0]["alpha_du"] = factory.createScalar(alpha_du);
                     passVal[0]["alpha_pr"] = factory.createScalar(alpha_pr);
 
-                    std::vector<matlab::data::Array> args({std::move(passVal)});
-                    std::vector<matlab::data::Array> retVal = feval(funcs[0]["intermediate"],1,args);
+                    std::vector<matlab::data::Array> args{passVal};
+                    std::vector<matlab::data::Array> retVal = utilities::feval(funcs[0]["intermediate"],1,args);
 
                     matlab::data::TypedArray<bool> retValue = std::move(retVal[0]);
                     
@@ -612,18 +591,18 @@ if (diagnosticPrintout)
         updateX(x);
 
         matlab::data::TypedArrayRef<double> zL = retStr[0]["z_L"];
-        for (auto i = 0; i < n; i++)
-            zL[i] = z_L[i];
         matlab::data::TypedArrayRef<double> zU = retStr[0]["z_U"];
-        for (auto i = 0; i < n; i++)
-            zU[i] = z_U[i];
         matlab::data::TypedArrayRef<double> lam = retStr[0]["lambda"];
-        for (auto i = 0; i < m; i++)
-            lam[i] = lambda[i];
 
+        std::copy(z_L, z_L + n, zL.begin());
+        std::copy(z_U, z_U + n, zU.begin());
+        std::copy(lambda, lambda + m, lam.begin());
+        
         if (diagnosticPrintout)
             stream << "Exit finalize_solution" << std::endl;
 
         };
   //@}
+
+  bool operator==(const myNLP& other) const = delete;
 };
