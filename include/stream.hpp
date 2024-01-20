@@ -20,4 +20,11 @@ public:
         str("");
         return 0;
     }
+
+    bool operator==(const Buffer& other) const
+    {
+        return false;
+    }
+
+    Buffer(const matlab::data::ArrayFactory& factory) = delete;
 };
