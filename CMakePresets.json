@@ -102,32 +102,62 @@
         {
             "name": "windows-intel-debug-build",
             "configurePreset": "windows-intel-debug-config",
-            "displayName": "Intel oneAPI Debug"
+            "displayName": "Intel oneAPI Debug",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
         },
         {
             "name": "windows-intel-release-build",
             "configurePreset": "windows-intel-release-config",
-            "displayName": "Intel oneAPI Release"
+            "displayName": "Intel oneAPI Release",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
         },
         {
             "name": "windows-msvc-debug-build",
             "configurePreset": "windows-msvc-debug-config",
-            "displayName": "MSVC Debug"
+            "displayName": "MSVC Debug",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
         },
         {
             "name": "windows-msvc-release-build",
             "configurePreset": "windows-msvc-release-config",
-            "displayName": "MSVC Release"
+            "displayName": "MSVC Release",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
         },
         {
             "name": "ubuntu-gcc-release-build",
             "configurePreset": "ubuntu-gcc-release-config",
-            "displayName": "Ubuntu GCC Release"
+            "displayName": "Ubuntu GCC Release",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
         },
         {
             "name": "ubuntu-gcc-debug-build",
             "configurePreset": "ubuntu-gcc-debug-config",
-            "displayName": "Ubuntu GCC Debug"
+            "displayName": "Ubuntu GCC Debug",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
         }
     ]
 }

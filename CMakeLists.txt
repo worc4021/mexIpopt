@@ -17,6 +17,8 @@ if (WIN32)
     set(CMAKE_CXX_FLAGS "/Wall /EHsc")
     list(APPEND COINIPOPTLIBS libipopt.lib libcoinhsl.lib libcoinmumps.lib libcoinmetis.lib)
 else()
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+    list(APPEND COINIPOPTLIBS libipopt.a libcoinhsl.a libcoinmumps.a libcoinmetis.a)
 endif()
 
 add_subdirectory(MexUtilities)
