@@ -64,6 +64,38 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
+        },
+        {
+            "name": "ubuntu-gcc-base",
+            "generator": "Ninja",
+            "displayName": "Ubuntu GCC base",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            },
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "ubuntu-gcc-release-config",
+            "displayName": "Ubuntu GCC Release",
+            "inherits": "ubuntu-gcc-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "ubuntu-gcc-debug-config",
+            "displayName": "Ubuntu GCC Debug",
+            "inherits": "ubuntu-gcc-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
         }
     ],
     "buildPresets": [
@@ -86,6 +118,16 @@
             "name": "windows-msvc-release-build",
             "configurePreset": "windows-msvc-release-config",
             "displayName": "MSVC Release"
+        },
+        {
+            "name": "ubuntu-gcc-release-build",
+            "configurePreset": "ubuntu-gcc-release-config",
+            "displayName": "Ubuntu GCC Release"
+        },
+        {
+            "name": "ubuntu-gcc-debug-build",
+            "configurePreset": "ubuntu-gcc-debug-config",
+            "displayName": "Ubuntu GCC Debug"
         }
     ]
 }
