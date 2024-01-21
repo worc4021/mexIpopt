@@ -1,0 +1,91 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "windows-intel-base",
+            "generator": "Ninja",
+            "displayName": "Intel oneAPI base",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "icx-cl",
+                "CMAKE_CXX_COMPILER": "icx-cl"
+            },
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-msvc-base",
+            "generator": "Ninja",
+            "displayName": "MSVC base",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl"
+            },
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-intel-debug-config",
+            "displayName": "Intel oneAPI Debug",
+            "inherits": "windows-intel-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows-intel-release-config",
+            "displayName": "Intel oneAPI Release",
+            "inherits": "windows-intel-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "windows-msvc-debug-config",
+            "displayName": "MSVC Debug",
+            "inherits": "windows-msvc-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows-msvc-release-config",
+            "displayName": "MSVC Release",
+            "inherits": "windows-msvc-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-intel-debug-build",
+            "configurePreset": "windows-intel-debug-config",
+            "displayName": "Intel oneAPI Debug"
+        },
+        {
+            "name": "windows-intel-release-build",
+            "configurePreset": "windows-intel-release-config",
+            "displayName": "Intel oneAPI Release"
+        },
+        {
+            "name": "windows-msvc-debug-build",
+            "configurePreset": "windows-msvc-debug-config",
+            "displayName": "MSVC Debug"
+        },
+        {
+            "name": "windows-msvc-release-build",
+            "configurePreset": "windows-msvc-release-config",
+            "displayName": "MSVC Release"
+        }
+    ]
+}
