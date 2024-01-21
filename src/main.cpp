@@ -4,6 +4,76 @@
 #include "stream.hpp"
 #include "nlp.hpp"
 
+
+std::string getApplicationStatus(Ipopt::ApplicationReturnStatus status) {
+    using Ipopt::ApplicationReturnStatus;
+    std::string retval{ "unknown" };
+    switch (status) {
+        case ApplicationReturnStatus::Solve_Succeeded:
+            retval = "Solve_Succeeded";
+            break;
+        case ApplicationReturnStatus::Solved_To_Acceptable_Level:
+            retval = "Solved_To_Acceptable_Level";
+            break;
+        case ApplicationReturnStatus::Infeasible_Problem_Detected:
+            retval = "Infeasible_Problem_Detected";
+            break;
+        case ApplicationReturnStatus::Search_Direction_Becomes_Too_Small:
+            retval = "Search_Direction_Becomes_Too_Small";
+            break;
+        case ApplicationReturnStatus::Diverging_Iterates:
+            retval = "Diverging_Iterates";
+            break;
+        case ApplicationReturnStatus::User_Requested_Stop:
+            retval = "User_Requested_Stop";
+            break;
+        case ApplicationReturnStatus::Feasible_Point_Found:
+            retval = "Feasible_Point_Found";
+            break;
+        case ApplicationReturnStatus::Maximum_Iterations_Exceeded:
+            retval = "Maximum_Iterations_Exceeded";
+            break;
+        case ApplicationReturnStatus::Restoration_Failed:
+            retval = "Restoration_Failed";
+            break;
+        case ApplicationReturnStatus::Error_In_Step_Computation:
+            retval = "Error_In_Step_Computation";
+            break;
+        case ApplicationReturnStatus::Maximum_CpuTime_Exceeded:
+            retval = "Maximum_CpuTime_Exceeded";
+            break;
+        case ApplicationReturnStatus::Maximum_WallTime_Exceeded:
+            retval = "Maximum_WallTime_Exceeded";
+            break;
+        case ApplicationReturnStatus::Not_Enough_Degrees_Of_Freedom:
+            retval = "Not_Enough_Degrees_Of_Freedom";
+            break;
+        case ApplicationReturnStatus::Invalid_Problem_Definition:
+            retval = "Invalid_Problem_Definition";
+            break;
+        case ApplicationReturnStatus::Invalid_Option:
+            retval = "Invalid_Option";
+            break;
+        case ApplicationReturnStatus::Invalid_Number_Detected:
+            retval = "Invalid_Number_Detected";
+            break;
+        case ApplicationReturnStatus::Unrecoverable_Exception:
+            retval = "Unrecoverable_Exception";
+            break;
+        case ApplicationReturnStatus::NonIpopt_Exception_Thrown:
+            retval = "NonIpopt_Exception_Thrown";
+            break;
+        case ApplicationReturnStatus::Insufficient_Memory:
+            retval = "Insufficient_Memory";
+            break;
+        case ApplicationReturnStatus::Internal_Error:
+            retval = "Internal_Error";
+            break;
+    }
+    return retval;
+        
+}
+
 class MexFunction 
     : public matlab::mex::Function {
 private:
@@ -96,7 +166,7 @@ public:
 
         if (outputs.size() > 1) {
             matlab::data::StructArray info = mynlp->getInfo();
-            info[0]["status"] = factory.createScalar<int>(status);
+            info[0]["appstatus"] = factory.createScalar(getApplicationStatus(status));
             matlab::data::StructArrayRef evals = info[0]["eval"];
 
             if (Ipopt::IsValid(app->Statistics())) {
