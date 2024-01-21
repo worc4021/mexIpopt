@@ -24,8 +24,7 @@ private:
 public:
 
     MatlabJournal(const std::string& name,
-                        Ipopt::EJournalLevel level,
-                        std::shared_ptr<matlab::engine::MATLABEngine> mptr) : 
+                        Ipopt::EJournalLevel level) : 
         Ipopt::Journal(name, level),
         cout(&buffer) {}
 

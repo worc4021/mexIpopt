@@ -112,7 +112,7 @@ private:
             matlab::data::TypedArray<double> plTemp = utilities::getfield(opts, "print_level");
             int pl(static_cast<int>(plTemp[0]));
             Ipopt::EJournalLevel printLevel(static_cast<Ipopt::EJournalLevel>(pl));
-            Ipopt::SmartPtr<Ipopt::Journal> console = new MatlabJournal("MatlabJournal", printLevel, matlabPtr);
+            Ipopt::SmartPtr<Ipopt::Journal> console = new MatlabJournal("MatlabJournal", printLevel);
             app->Jnlst()->AddJournal(console);
         }
     }
