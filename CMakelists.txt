@@ -14,7 +14,7 @@ find_package(MKL REQUIRED)
 
 set(COINIPOPTLIBS)
 if (WIN32)
-    list(APPEND CMAKE_CXX_FLAGS /Wall /Wextra)
+    set(CMAKE_CXX_FLAGS "/Wall /EHsc")
     list(APPEND COINIPOPTLIBS libipopt.lib libcoinhsl.lib libcoinmumps.lib coinmetis.lib)
 else()
 endif()
