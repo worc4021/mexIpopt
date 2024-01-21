@@ -81,12 +81,12 @@ private:
     std::size_t _n{};
     std::size_t _m{};
     bool isinitialised{ false };
-    bool returnHessian{ false };
+    bool returnHessian{ true };
     bool intermediateCallback{ false };
     bool diagnosticPrintout{ false };
     matlab::data::ArrayFactory factory;
     matlab::data::StructArray funcs;
-    matlab::data::StructArray options;
+    matlab::data::StructArray variableInfo;
     matlab::data::StructArray retStr;
     std::vector<matlab::data::TypedArray<double>> args;
     Buffer buffer;
@@ -177,7 +177,7 @@ public:
 
     myNLP() : _n(0), _m(0), isinitialised(false), returnHessian(true), intermediateCallback(false), diagnosticPrintout(false),
         funcs(factory.createStructArray({0,0},{})),
-        options(factory.createStructArray({0,0},{})),
+        variableInfo(factory.createStructArray({0,0},{})),
         retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval"})), // Make sure the structure is always available
         stream(&buffer), 
         _jac(),_hes(),_x(factory.createArray<double>({0,1})), _sigma(factory.createScalar(1.)),_lambda(factory.createArray<double>({0,1}))
@@ -203,32 +203,115 @@ public:
     }
 
     void setup( 
-            matlab::data::TypedArray<double>& _x0, 
-            matlab::data::StructArray& _funcs, 
-            matlab::data::StructArray& _options
+            matlab::data::StructArray& problem
         ) {
         
-        _x = std::move(_x0);
+        variableInfo = utilities::getfield(problem,"variableInfo");
+        funcs = utilities::getfield(problem, "funcs");
+        
 
-        funcs = std::move(_funcs);
-        options = std::move(_options);
+        if (!utilities::isfield(variableInfo, "x0"))
+            utilities::error("Variable info struct does not contain x0.");
+        if (!utilities::isfield(variableInfo, "lb"))
+            utilities::error("Variable info struct does not contain lb");
+        if (!utilities::isfield(variableInfo, "ub"))
+            utilities::error("Variable info struct does not contain ub");
+        if (!utilities::isfield(variableInfo, "cu"))
+            utilities::error("Variable info struct does not contain cu");
+        if (!utilities::isfield(variableInfo, "cl"))
+            utilities::error("Variable info struct does not contain cl");
 
-        if (utilities::isfield(options, "ipopt")){
-            matlab::data::StructArray ipoptStr = options[0]["ipopt"];
-            if (utilities::isfield(ipoptStr, "hessian_approximation")){
-                if (utilities::isstring(ipoptStr[0]["hessian_approximation"])  ) {
-                    returnHessian = (
-                        0 != utilities::getstringvalue(ipoptStr[0]["hessian_approximation"])
-                                .compare("limited-memory")
-                                );
-                } else {
-                    utilities::error("limited-memory must be a string type");
-                }
+        _x = utilities::getfield(variableInfo,"x0");
+
+        if (utilities::isfield(problem, "ipopt"))
+        {
+            matlab::data::StructArray ipoptOptions = utilities::getfield(problem, "ipopt");
+            if (utilities::isfield(ipoptOptions, "hessian_approximation")) {
+                std::string hessian_approx = utilities::getstringvalue(utilities::getfield(ipoptOptions, "hessian_approximation"));
+                returnHessian = (0 != hessian_approx.compare("limited-memory"));
+            }
+            if (utilities::isfield(ipoptOptions, "debug")) {
+                matlab::data::Array field = utilities::getfield(ipoptOptions, "debug");
+                diagnosticPrintout = (0. < utilities::getscalar<double>(field));
             }
         }
+ 
+        if (utilities::isfield(funcs, "objective")) {
+            matlab::data::Array obj = utilities::getfield(funcs, "objective");
+            if (!utilities::ishandle(obj))
+                goto noobjective;
+        }
+        else {
+noobjective:
+            utilities::error("The objective field on funcs must be a function handle taking one vector intput");
+        }
+        if (utilities::isfield(funcs, "gradient")) {
+            matlab::data::Array g = utilities::getfield(funcs, "gradient");
+            if (!utilities::ishandle(g))
+                goto nogradient;
+        }
+        else {
+nogradient:
+            utilities::error("The gradient field on funcs must be a function handle taking one vector intput");
+        }
+        if (utilities::isfield(funcs, "jacobianstructure")) {
+            matlab::data::Array js = utilities::getfield(funcs, "jacobianstructure");
+            if (!utilities::ishandle(js))
+                goto nojacstr;
+        }
+        else {
+nojacstr:
+            utilities::error("The jacobianstructure field on funcs must be a function handle taking one vector intput");
+        }
+        if (utilities::isfield(funcs, "jacobian")) {
+            matlab::data::Array j = utilities::getfield(funcs, "jacobian");
+            if (!utilities::ishandle(j))
+                goto nojac;
+        }
+        else {
+nojac:
+            utilities::error("The jacobian field on funcs must be a function handle taking one vector intput");
+        }
+        
 
-        intermediateCallback = utilities::isfield(funcs, "intermediate") && utilities::ishandle(funcs[0]["intermediate"]);
-        diagnosticPrintout = utilities::isfield(options, "debug");
+        if (utilities::isfield(funcs, "constraints")) {
+            matlab::data::Array c = utilities::getfield(funcs, "constraints");
+            if (!utilities::ishandle(c))
+                goto nocons;
+        }
+        else {
+nocons:
+            utilities::error("The constraints field on funcs must be a function handle taking one vector intput");
+        }
+        if (returnHessian) {
+            if (utilities::isfield(funcs, "hessianstructure")) {
+                matlab::data::Array hs = utilities::getfield(funcs, "hessianstructure");
+                if (!utilities::ishandle(hs))
+                    goto nohesstr;
+            }
+            else {
+nohesstr:
+                utilities::error("The hessianstructure field on funcs must be a function handle taking one vector intput");
+            }
+            
+            if (utilities::isfield(funcs, "hessian")) {
+                matlab::data::Array h = utilities::getfield(funcs, "hessian");
+                if (!utilities::ishandle(h))
+                    goto nohes;
+            }
+            else {
+nohes:
+                utilities::error("The hessian field on funcs must be a function handle taking one vector intput");
+            }
+        }
+        if (utilities::isfield(funcs, "intermediate")) {
+            matlab::data::Array h = utilities::getfield(funcs, "intermediate");
+            if (utilities::ishandle(h))
+                intermediateCallback = true;
+            else
+                utilities::warning("Intermediate callback was specified but is not a function handle.");
+        }
+
     }
 
     matlab::data::Array fevalWithX(const matlab::data::Array& handle) {
@@ -258,7 +341,7 @@ public:
         n = static_cast<Ipopt::Index>(_x.getNumberOfElements());
         _n = _x.getNumberOfElements();
 
-        matlab::data::TypedArray<double> cu = utilities::getfield(options,"cu");
+        matlab::data::TypedArray<double> cu = utilities::getfield(variableInfo,"cu");
         m = static_cast<Ipopt::Index>(cu.getNumberOfElements());
         _m = cu.getNumberOfElements();
         
@@ -308,10 +391,10 @@ public:
     {
         if (diagnosticPrintout)
             stream << "Enter get_bounds_info" << std::endl;
-        matlab::data::TypedArray<double> xl = utilities::getfield(options,"lb");
-        matlab::data::TypedArray<double> xu = utilities::getfield(options,"ub");
-        matlab::data::TypedArray<double> gl = utilities::getfield(options,"cl");
-        matlab::data::TypedArray<double> gu = utilities::getfield(options,"cu");
+        matlab::data::TypedArray<double> xl = utilities::getfield(variableInfo,"lb");
+        matlab::data::TypedArray<double> xu = utilities::getfield(variableInfo,"ub");
+        matlab::data::TypedArray<double> gl = utilities::getfield(variableInfo,"cl");
+        matlab::data::TypedArray<double> gu = utilities::getfield(variableInfo,"cu");
 
         if (xl.getNumberOfElements() != _n)
             utilities::error("Size mismatch: Lower bound on x has {} elements whereas x0 has {}.", xl.getNumberOfElements(), _n);
@@ -344,12 +427,32 @@ public:
         std::copy(_x.cbegin(), _x.cend(), x);
     }
     if (init_z){
-        // We should be able to warmstart duals on the decision variable
-        std::fill(z_L, z_L + n, 0.);
-        std::fill(z_U, z_U + n, 0.);
-        // as well as the constrain multipliers. Figure out a way of passing them in!
+        if (utilities::isfield(variableInfo, "zl")) {
+            matlab::data::TypedArray<double> zL = utilities::getfield(variableInfo, "zl");
+            if (_x.getNumberOfElements() != zL.getNumberOfElements())
+                utilities::error("Passed initial value for zl had {} elements, whereas {} are expected.", zL.getNumberOfElements(), _x.getNumberOfElements());
+            std::copy(zL.cbegin(), zL.cend(), z_L);
+        } else 
+            std::fill(z_L, z_L + n, 0.);
+
+        if (utilities::isfield(variableInfo, "zu")) {
+            matlab::data::TypedArray<double> zU = utilities::getfield(variableInfo, "zu");
+            if (_x.getNumberOfElements() != zU.getNumberOfElements())
+                utilities::error("Passed initial value for zu had {} elements, whereas {} are expected.", zU.getNumberOfElements(), _x.getNumberOfElements());
+            std::copy(zU.cbegin(), zU.cend(), z_U);
+        }
+        else
+            std::fill(z_U, z_U + n, 0.);
+        
         if (init_lambda) {
-            std::fill(lambda, lambda + m, 0.);
+            if (utilities::isfield(variableInfo, "lambda")) {
+                matlab::data::TypedArray<double> lam = utilities::getfield(variableInfo, "lambda");
+                if (static_cast<std::size_t>(m) != lam.getNumberOfElements())
+                    utilities::error("Passed initial value for lambda had {} elements, whereas {} are expected.", lam.getNumberOfElements(), m);
+                std::copy(lam.cbegin(), lam.cend(), lambda);
+            }
+            else
+                std::fill(lambda, lambda + m, 0.);
         }
     }
 

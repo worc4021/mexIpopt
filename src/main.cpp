@@ -25,17 +25,25 @@ private:
 
     }
 
-    void setOptions(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, matlab::data::StructArray& options) {
-        if ( utilities::isfield(options, "ipopt") ) {
-            matlab::data::StructArray opts = options[0]["ipopt"];
-            auto fields = opts.getFieldNames();
-            std::string fieldName("");
-            matlab::data::Array curField;
-            for (auto& field : fields){
-                fieldName = field;
-                curField = opts[0][field];
-                setSingleOption(app, fieldName, curField);
-            }
+    void setOptions(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, const matlab::data::StructArray& opts) {
+        auto fields = opts.getFieldNames();
+        std::string fieldName("");
+        matlab::data::Array curField;
+        for (auto& field : fields){
+            fieldName = field;
+            curField = opts[0][field];
+            setSingleOption(app, fieldName, curField);
+        }
+
+        if (utilities::isfield(opts, "print_level")
+            && utilities::isscalarinteger(utilities::getfield(opts, "print_level"))
+            && utilities::ispositive(utilities::getfield(opts, "print_level")))
+        {
+            matlab::data::TypedArray<double> plTemp = utilities::getfield(opts, "print_level");
+            int pl(static_cast<int>(plTemp[0]));
+            Ipopt::EJournalLevel printLevel(static_cast<Ipopt::EJournalLevel>(pl));
+            Ipopt::SmartPtr<Ipopt::Journal> console = new MatlabJournal("MatlabJournal", printLevel, matlabPtr);
+            app->Jnlst()->AddJournal(console);
         }
     }
 
@@ -50,40 +58,30 @@ public:
     ~MexFunction() {}
     void operator()(matlab::mex::ArgumentList outputs, matlab::mex::ArgumentList inputs) {
         
-        if (inputs.size() != 3)
-            utilities::error("x0, funcs and options are needed.");
+        if (inputs.size() != 1)
+            utilities::error("Pass a struct with the fields 'variableInfo', 'funcs' and 'ipopt'");
         
-        matlab::data::TypedArray<double> x0(inputs[0]);
-
-        matlab::data::StructArray funcs(inputs[1]);
-        matlab::data::StructArray opts(inputs[2]);
+        matlab::data::StructArray problem = std::move(inputs[0]);
+        
+        if (!utilities::isfield(problem, "variableInfo"))
+            utilities::error("Field 'variableInfo' not supplied.");
+        if (!utilities::isfield(problem, "funcs"))
+            utilities::error("Field 'funcs' not supplied.");
+        if (!utilities::isfield(problem, "ipopt"))
+            utilities::warning("Field 'ipopt' not supplied.");
 
         Ipopt::SmartPtr<myNLP> mynlp = new myNLP();
+        mynlp->setup(problem);
 
-        mynlp->setup(x0, funcs, opts);
-
+        
         Ipopt::SmartPtr<Ipopt::IpoptApplication> app = IpoptApplicationFactory();
         app->RethrowNonIpoptException(true);
 
         // Set options that were passed
+        matlab::data::StructArray opts = utilities::getfield(problem, "ipopt");
         setOptions(app, opts);
 
-        if (utilities::isfield(opts, "ipopt") && utilities::isstruct(utilities::getfield(opts, "ipopt"))) {
-            matlab::data::StructArray ipoptopts = opts[0]["ipopt"];
-            if (    utilities::isfield(ipoptopts, "print_level") 
-                &&  utilities::isscalarinteger(utilities::getfield(ipoptopts,"print_level"))
-                &&  utilities::ispositive(utilities::getfield(ipoptopts,"print_level")))
-            {
-                matlab::data::TypedArray<double> plTemp = utilities::getfield(ipoptopts,"print_level");
-                int pl(static_cast<int>(plTemp[0]));
-                Ipopt::EJournalLevel printLevel(static_cast<Ipopt::EJournalLevel>(pl));
-                Ipopt::SmartPtr<Ipopt::Journal> console = new MatlabJournal("MatlabJournal",printLevel, matlabPtr);
-                app->Jnlst()->AddJournal(console);
-            } 
-        }
-
         
-
         Ipopt::ApplicationReturnStatus status;
         status = app->Initialize();
         if (status != Ipopt::Solve_Succeeded) {
