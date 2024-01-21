@@ -80,7 +80,6 @@ private:
     
     std::size_t _n{};
     std::size_t _m{};
-    bool isinitialised{ false };
     bool returnHessian{ true };
     bool intermediateCallback{ false };
     bool diagnosticPrintout{ false };
@@ -175,10 +174,10 @@ public:
     myNLP(const myNLP&) = delete;
     myNLP operator=(const myNLP&) = delete;
 
-    myNLP() : _n(0), _m(0), isinitialised(false), returnHessian(true), intermediateCallback(false), diagnosticPrintout(false),
+    myNLP() : _n(0), _m(0), returnHessian(true), intermediateCallback(false), diagnosticPrintout(false),
         funcs(factory.createStructArray({0,0},{})),
         variableInfo(factory.createStructArray({0,0},{})),
-        retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval"})), // Make sure the structure is always available
+        retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval","appstatus"})), // Make sure the structure is always available
         stream(&buffer), 
         _jac(),_hes(),_x(factory.createArray<double>({0,1})), _sigma(factory.createScalar(1.)),_lambda(factory.createArray<double>({0,1}))
     {
@@ -534,10 +533,10 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
             [[maybe_unused]]Ipopt::Index m, [[maybe_unused]]Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index *jCol,
             Ipopt::Number* values) 
 {
-if (diagnosticPrintout)
-    stream << "Enter eval_jac_g" << std::endl;
+    if (diagnosticPrintout)
+        stream << "Enter eval_jac_g" << std::endl;
     
-    if (nullptr == values){
+    if (nullptr == values) {
         _jac.iRow(iRow);
         _jac.jCol(jCol);
     } else {
@@ -561,38 +560,37 @@ if (diagnosticPrintout)
   bool eval_h([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                       Ipopt::Number obj_factor, [[maybe_unused]]Ipopt::Index m, const Ipopt::Number* lambda,
                       bool new_lambda, [[maybe_unused]]Ipopt::Index nele_hess, Ipopt::Index* iRow,
-                      Ipopt::Index* jCol, Ipopt::Number* values) 
-        {
-        if (diagnosticPrintout)
-            stream << "Enter eval_h" << std::endl;
+                      Ipopt::Index* jCol, Ipopt::Number* values) {
+    if (diagnosticPrintout)
+        stream << "Enter eval_h" << std::endl;
 
-            if (nullptr == values){
-                _hes.iRow(iRow);
-                _hes.jCol(jCol);
-                _lambda = factory.createArray<double>({ _hes.getNumberOfColumns(),1});
-            } else {
-                if (new_x) 
-                    updateX(x);
-                // No point providing a more formal mechanism to update things that are only used in here.
-                _sigma = factory.createScalar(obj_factor);
-                if (new_lambda)
-                    std::copy(lambda, lambda + _m, _lambda.begin());
+    if (nullptr == values) {
+        _hes.iRow(iRow);
+        _hes.jCol(jCol);
+        _lambda = factory.createArray<double>({ _hes.getNumberOfColumns(),1});
+    } else {
+        if (new_x) 
+            updateX(x);
+        // No point providing a more formal mechanism to update things that are only used in here.
+        _sigma = factory.createScalar(obj_factor);
+        if (new_lambda)
+            std::copy(lambda, lambda + _m, _lambda.begin());
 
-                std::vector<matlab::data::Array> hessianArgs{
-                    _x, 
-                    _sigma,
-                    _lambda
-                };
+        std::vector<matlab::data::Array> hessianArgs{
+            _x, 
+            _sigma,
+            _lambda
+        };
 
-                std::vector<matlab::data::Array> retVals = utilities::feval(funcs[0]["hessian"], 1, hessianArgs);
-                matlab::data::SparseArray<double> hessian = std::move(retVals[0]);
-                _hes.updateValues(hessian);
-                _hes.val(values);
-            }
-            if (diagnosticPrintout)
-                stream << "Exit eval_h" << std::endl;
-            return true;
-        }
+        std::vector<matlab::data::Array> retVals = utilities::feval(funcs[0]["hessian"], 1, hessianArgs);
+        matlab::data::SparseArray<double> hessian = std::move(retVals[0]);
+        _hes.updateValues(hessian);
+        _hes.val(values);
+    }
+    if (diagnosticPrintout)
+        stream << "Exit eval_h" << std::endl;
+    return true;
+}
 
   //@}
 
@@ -711,6 +709,7 @@ if (diagnosticPrintout)
         std::copy(z_L, z_L + _n, zL.begin());
         std::copy(z_U, z_U + _n, zU.begin());
         std::copy(lambda, lambda + _m, lam.begin());
+        retStr[0]["status"] = factory.createScalar(getStatus(status));
         
         if (diagnosticPrintout)
             stream << "Exit finalize_solution" << std::endl;
