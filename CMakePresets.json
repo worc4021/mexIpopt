@@ -2,14 +2,18 @@
     "version": 6,
     "configurePresets": [
         {
-            "name": "windows-intel-base",
+            "name": "config-base",
             "generator": "Ninja",
-            "displayName": "Intel oneAPI base",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "icx-cl",
-                "CMAKE_CXX_COMPILER": "icx-cl"
+            "hidden": true,
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
             },
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "installDir": "${sourceDir}/out/install/${presetName}"
+        },
+        {
+            "name": "windows-conifg-base",
             "hidden": true,
             "condition": {
                 "type": "equals",
@@ -18,62 +22,7 @@
             }
         },
         {
-            "name": "windows-msvc-base",
-            "generator": "Ninja",
-            "displayName": "MSVC base",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
-            },
-            "hidden": true,
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "windows-intel-debug-config",
-            "displayName": "Intel oneAPI Debug",
-            "inherits": "windows-intel-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "windows-intel-release-config",
-            "displayName": "Intel oneAPI Release",
-            "inherits": "windows-intel-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "windows-msvc-debug-config",
-            "displayName": "MSVC Debug",
-            "inherits": "windows-msvc-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "windows-msvc-release-config",
-            "displayName": "MSVC Release",
-            "inherits": "windows-msvc-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "ubuntu-gcc-base",
-            "generator": "Ninja",
-            "displayName": "Ubuntu GCC base",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++"
-            },
+            "name": "linux-conifg-base",
             "hidden": true,
             "condition": {
                 "type": "equals",
@@ -82,9 +31,71 @@
             }
         },
         {
+            "name": "windows-intel-base",
+            "inherits": "config-base",
+            "displayName": "Intel oneAPI base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "icx-cl",
+                "CMAKE_CXX_COMPILER": "icx-cl"
+            },
+            "hidden": true
+        },
+        {
+            "name": "windows-msvc-base",
+            "inherits": "config-base",
+            "displayName": "MSVC base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl"
+            },
+            "hidden": true
+        },
+        {
+            "name": "windows-intel-debug-config",
+            "displayName": "Intel oneAPI Debug",
+            "inherits": ["windows-intel-base","windows-conifg-base"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows-intel-release-config",
+            "displayName": "Intel oneAPI Release",
+            "inherits": ["windows-intel-base","windows-conifg-base"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "windows-msvc-debug-config",
+            "displayName": "MSVC Debug",
+            "inherits": ["windows-msvc-base","windows-conifg-base"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows-msvc-release-config",
+            "displayName": "MSVC Release",
+            "inherits": ["windows-msvc-base","windows-conifg-base"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "ubuntu-gcc-base",
+            "inherits": "config-base",
+            "displayName": "Ubuntu GCC base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            },
+            "hidden": true
+        },
+        {
             "name": "ubuntu-gcc-release-config",
             "displayName": "Ubuntu GCC Release",
-            "inherits": "ubuntu-gcc-base",
+            "inherits": ["ubuntu-gcc-base","linux-conifg-base"],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
@@ -92,7 +103,7 @@
         {
             "name": "ubuntu-gcc-debug-config",
             "displayName": "Ubuntu GCC Debug",
-            "inherits": "ubuntu-gcc-base",
+            "inherits": ["ubuntu-gcc-base","linux-conifg-base"],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -100,7 +111,26 @@
     ],
     "buildPresets": [
         {
+            "name": "windows-build-base",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-build-base",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
             "name": "windows-intel-debug-build",
+            "inherits": "windows-build-base",
             "configurePreset": "windows-intel-debug-config",
             "displayName": "Intel oneAPI Debug",
             "condition": {
@@ -111,6 +141,7 @@
         },
         {
             "name": "windows-intel-release-build",
+            "inherits": "windows-build-base",
             "configurePreset": "windows-intel-release-config",
             "displayName": "Intel oneAPI Release",
             "condition": {
@@ -121,6 +152,7 @@
         },
         {
             "name": "windows-msvc-debug-build",
+            "inherits": "windows-build-base",
             "configurePreset": "windows-msvc-debug-config",
             "displayName": "MSVC Debug",
             "condition": {
@@ -131,6 +163,7 @@
         },
         {
             "name": "windows-msvc-release-build",
+            "inherits": "windows-build-base",
             "configurePreset": "windows-msvc-release-config",
             "displayName": "MSVC Release",
             "condition": {
@@ -141,6 +174,7 @@
         },
         {
             "name": "ubuntu-gcc-release-build",
+            "inherits": "linux-build-base",
             "configurePreset": "ubuntu-gcc-release-config",
             "displayName": "Ubuntu GCC Release",
             "condition": {
@@ -151,6 +185,7 @@
         },
         {
             "name": "ubuntu-gcc-debug-build",
+            "inherits": "linux-build-base",
             "configurePreset": "ubuntu-gcc-debug-config",
             "displayName": "Ubuntu GCC Debug",
             "condition": {
