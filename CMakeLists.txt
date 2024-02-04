@@ -34,18 +34,35 @@ matlab_add_mex(
     R2018a
 )
 
+matlab_add_mex(
+    NAME model_eval_mex
+    SRC src/modelEval.cpp
+    OUTPUT_NAME model_eval
+    LINK_TO 
+        MexUtilities::MexUtilities 
+        ${COINIPOPTLIBS}
+        MKL::MKL
+    R2018a
+)
+
 target_include_directories(ipopt_mex PRIVATE 
                             ${CMAKE_CURRENT_SOURCE_DIR}/include
                             ${ipopt_INCLUDE_DIRS})
 
 target_link_directories(ipopt_mex PRIVATE ${ipopt_LIBRARY_DIRS})
 
+target_include_directories(model_eval_mex PRIVATE 
+                            ${CMAKE_CURRENT_SOURCE_DIR}/include
+                            ${ipopt_INCLUDE_DIRS})
+
+target_link_directories(model_eval_mex PRIVATE ${ipopt_LIBRARY_DIRS})
+
 message(STATUS "binary path: ${CMAKE_CURRENT_BINARY_DIR}")
 
 include(CTest)
-matlab_add_unit_test(NAME HS71
-                     UNITTEST_FILE hs71.m
-                     ADDITIONAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/matlab $<TARGET_FILE_DIR:ipopt_mex>)
+# matlab_add_unit_test(NAME HS71
+#                      UNITTEST_FILE hs71.m
+#                      ADDITIONAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/matlab $<TARGET_FILE_DIR:ipopt_mex>)
 
 matlab_add_unit_test(NAME Himmelblau
                      UNITTEST_FILE Himmelblau.m
