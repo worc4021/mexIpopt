@@ -19,6 +19,12 @@
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Windows"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": "Windows",
+                    "intelliSenseMode": "windows-msvc-x64"
+                }
             }
         },
         {
@@ -132,40 +138,52 @@
             "name": "windows-intel-debug-build",
             "inherits": "windows-build-base",
             "configurePreset": "windows-intel-debug-config",
-            "displayName": "Intel oneAPI Debug",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
+            "displayName": "Intel oneAPI Debug"
         },
         {
             "name": "windows-intel-release-build",
             "inherits": "windows-build-base",
             "configurePreset": "windows-intel-release-config",
-            "displayName": "Intel oneAPI Release",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
+            "displayName": "Intel oneAPI Release"            
         },
         {
             "name": "windows-msvc-debug-build",
             "inherits": "windows-build-base",
             "configurePreset": "windows-msvc-debug-config",
-            "displayName": "MSVC Debug",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
+            "displayName": "MSVC Debug"
         },
         {
             "name": "windows-msvc-release-build",
             "inherits": "windows-build-base",
             "configurePreset": "windows-msvc-release-config",
-            "displayName": "MSVC Release",
+            "displayName": "MSVC Release"
+        },
+        {
+            "name": "ubuntu-gcc-release-build",
+            "inherits": "linux-build-base",
+            "configurePreset": "ubuntu-gcc-release-config",
+            "displayName": "Ubuntu GCC Release"
+        },
+        {
+            "name": "ubuntu-gcc-debug-build",
+            "inherits": "linux-build-base",
+            "configurePreset": "ubuntu-gcc-debug-config",
+            "displayName": "Ubuntu GCC Debug"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "test-base",
+            "hidden": true,
+            "output": {"outputOnFailure": true},
+            "execution": {
+                "noTestsAction": "error", 
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "test-windows",
+            "hidden": true,
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -173,10 +191,8 @@
             }
         },
         {
-            "name": "ubuntu-gcc-release-build",
-            "inherits": "linux-build-base",
-            "configurePreset": "ubuntu-gcc-release-config",
-            "displayName": "Ubuntu GCC Release",
+            "name" : "test-linux",
+            "hidden": true,
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -184,15 +200,16 @@
             }
         },
         {
-            "name": "ubuntu-gcc-debug-build",
-            "inherits": "linux-build-base",
-            "configurePreset": "ubuntu-gcc-debug-config",
-            "displayName": "Ubuntu GCC Debug",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
-            }
+            "name": "windows-intel-release-test",
+            "inherits": ["test-base","test-windows"],
+            "configurePreset": "windows-intel-release-config",
+            "displayName": "Intel oneAPI Release"
+        },
+        {
+            "name": "windows-msvc-release-test",
+            "inherits": ["test-base","test-windows"],
+            "configurePreset": "windows-msvc-release-config",
+            "displayName": "MSVC Release"
         }
     ]
 }
