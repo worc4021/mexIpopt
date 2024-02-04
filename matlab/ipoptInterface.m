@@ -1,33 +1,36 @@
 classdef ipoptInterface < handle
        
     properties (SetAccess = protected)
-        fVal (1,1) double
-        gCur (:,1) double
+        fVal (1,1) double       % Objective value
+        gCur (:,1) double       % Objective gradient
 
-        cVal (:,1) double
-        cJacCur (:,:) double
+        cVal (:,1) double       % Constraint values
+        cJacCur (:,:) double    % Constraint Jacobian
 
-        xCur (:,1) double
+        xCur (:,1) double       % Current decision variable (Initially x0)
 
-        xBnd (:,2) double
-        cBnd (:,2) double
-
-        zInit (:,2) double
-        lambdaInit (:,1) double
-        HVal (:,:) double
+        xBnd (:,2) double       % Bounds on decision variable [lb,ub]
+        cBnd (:,2) double       % Bounds on constraints [lb,ub]
+        
+        % Optional
+        zInit (:,2) double      % Initial multipliers for decision variable
+        lambdaInit (:,1) double % Initial multipliers for constraints
+        HVal (:,:) double       % Hessian matrix (lower triangular)
     end
 
     methods (Abstract)
-        runmodel(obj, x)
+        % Single callback to update internal model and set function values
+        % and derivatives etc.
+        update(obj,x)
+        % Callback for updating internal Hessian HVal with appropriate
+        % lower triangular Hessian, given objective weight sigma and
+        % multipliers lambda.
         constructHessian(obj,sigma,lambda)
     end
 
     methods 
-                
-        function update(obj,x)
-            runmodel(obj,x);
-        end
-
+        % Prototype intermediate callback. Return value can terminate
+        % solve.
         function bContinue = intermediateCallback(~,s)
             bContinue = true;
         end
