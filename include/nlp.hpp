@@ -15,62 +15,6 @@
 #include <algorithm>
 #include <memory>
 
-class MatlabJournal : 
-    public Ipopt::Journal
-{
-private:
-    Buffer buffer;
-    std::ostream cout;
-public:
-
-    MatlabJournal(const std::string& name,
-                        Ipopt::EJournalLevel level) : 
-        Ipopt::Journal(name, level),
-        cout(&buffer) {}
-
-    virtual ~MatlabJournal() {}
-
-protected:
-
-    virtual std::string Name() {
-        return std::string("MatlabJournal");
-    }
-
-    // These functions override the functions in the Journal class.
-    virtual
-    void
-    PrintImpl(  [[maybe_unused]]Ipopt::EJournalCategory category,
-                [[maybe_unused]]Ipopt::EJournalLevel    level,
-                char const *     str) {
-        cout << std::string(str);
-    }
-
-    virtual
-    void
-    PrintfImpl( [[maybe_unused]]Ipopt::EJournalCategory category,
-                [[maybe_unused]]Ipopt::EJournalLevel    level,
-                char const *     pformat,
-                va_list ap ) {
-                    char _buffer[1000];
-                    vsnprintf(_buffer, 1000, pformat, ap);
-                    cout << std::string(_buffer);
-                }
-
-    virtual
-    void FlushBufferImpl()
-    {
-        cout.flush();
-    }
-
-public:
-
-    MatlabJournal() = delete;
-    MatlabJournal(const MatlabJournal&) = delete;
-    MatlabJournal(const Buffer& buffer, const std::ostream& cout) = delete;
-
-    MatlabJournal operator=(const MatlabJournal& other) = delete;
-};
-
 
 class myNLP 
     : public Ipopt::TNLP
@@ -312,11 +256,11 @@ nohes:
 
     }
 
-    matlab::data::Array fevalWithX(const matlab::data::Array& handle) {
+    matlab::data::Array fevalWithX(const matlab::data::Array& handle, bool new_x = true) {
         if (diagnosticPrintout)
             stream << "Enter fevalWithX" << std::endl;
 
-        std::vector<matlab::data::Array> retVal = utilities::feval(handle, 1, {_x});
+        std::vector<matlab::data::Array> retVal = utilities::feval(handle, 1, {_x, factory.createScalar<bool>(new_x)});
         if (diagnosticPrintout)
             stream << "Exit fevalWithX" << std::endl;
         return retVal[0];
@@ -471,7 +415,7 @@ nohes:
     if (new_x) 
         updateX(x);
 
-    matlab::data::TypedArray<double> objOut = fevalWithX(funcs[0]["objective"]);
+    matlab::data::TypedArray<double> objOut = fevalWithX(funcs[0]["objective"], new_x);
 
     obj_value = objOut[0];
 
@@ -489,7 +433,7 @@ nohes:
     if (new_x) 
         updateX(x);
 
-    matlab::data::TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"]);
+    matlab::data::TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"], new_x);
 
     if (gradOut.getNumberOfElements() != _n)
         utilities::error("Size mismatch: gradient callback returned {} elements, whereas {} are expected.", gradOut.getNumberOfElements(), _n);
@@ -511,7 +455,7 @@ nohes:
     if (new_x) 
         updateX(x);
 
-    matlab::data::TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"]);
+    matlab::data::TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"], new_x);
     
     if (constOut.getNumberOfElements() != _m)
         utilities::error("Size mismatch: constraint callback returned {} elements, whereas {} are expected.", constOut.getNumberOfElements(), _m);
@@ -543,7 +487,7 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
         if (new_x) 
             updateX(x);
 
-        matlab::data::SparseArray<double> jVals = fevalWithX(funcs[0]["jacobian"]);
+        matlab::data::SparseArray<double> jVals = fevalWithX(funcs[0]["jacobian"], new_x);
         _jac.updateValues(jVals);
         _jac.val(values);
     }
@@ -578,7 +522,9 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
         std::vector<matlab::data::Array> hessianArgs{
             _x, 
             _sigma,
-            _lambda
+            _lambda,
+            factory.createScalar<bool>(new_x),
+            factory.createScalar<bool>(new_lambda)
         };
 
         std::vector<matlab::data::Array> retVals = utilities::feval(funcs[0]["hessian"], 1, hessianArgs);
