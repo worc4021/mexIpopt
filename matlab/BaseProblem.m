@@ -1,17 +1,9 @@
-classdef BaseProblem < matlab.unittest.TestCase
+classdef BaseProblem < matlab.unittest.TestCase & ProblemData
     
     properties (TestParameter)
         linear_solver = {"ma27", "mumps", "pardisomkl"};
         hessian_approximation = {"exact","limited-memory"};
         warm_start_init_point = {"no","yes"};
-    end
-
-    properties
-        x0 (:,1) double
-        xBnd (:,2) double
-        cBnd (:,2) double
-        z0 (:,2) double
-        lambda0 (:,1) double
     end
     
     methods (Test)
@@ -70,13 +62,13 @@ classdef BaseProblem < matlab.unittest.TestCase
     end
 
     methods (Abstract)
-        fVal = objective(obj, x, bNewX)
-        fJac = gradient(obj, x, bNewX)
-        cVal = constraints(obj, x, bNewX)
-        cJac = jacobian(obj, x, bNewX)
+        fVal = objective(obj, x)
+        fJac = gradient(obj, x)
+        cVal = constraints(obj, x)
+        cJac = jacobian(obj, x)
         cStr = jacobianstructure(obj)
         % Hessian in lower triangular form
-        hVal = hessian(obj, x,sigma,lambda,bNewX,bNewLambda)
+        hVal = hessian(obj, x,sigma,lambda)
         hStr = hessianstructure(obj)
     end
 

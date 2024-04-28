@@ -1,4 +1,4 @@
-classdef Himmelblau < BaseProblem
+classdef Himmelblau < ProblemData
     methods
         function obj = Himmelblau()
             obj.x0 = [3; 2];
