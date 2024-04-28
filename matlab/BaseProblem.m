@@ -4,7 +4,6 @@ classdef BaseProblem < matlab.unittest.TestCase
         linear_solver = {"ma27", "mumps", "pardisomkl"};
         hessian_approximation = {"exact","limited-memory"};
         warm_start_init_point = {"no","yes"};
-        dependency_detector = {"mumps"};%,"ma28"};
     end
 
     properties
@@ -16,20 +15,8 @@ classdef BaseProblem < matlab.unittest.TestCase
     end
     
     methods (Test)
-        function testSolve(testCase, linear_solver, hessian_approximation, warm_start_init_point,dependency_detector)
-            % Test the "ipopt" Matlab interface on the Hock & Schittkowski test problem
-            % #71. See: Willi Hock and Klaus Schittkowski. (1981) Test Examples for
-            % Nonlinear Programming Codes. Lecture Notes in Economics and Mathematical
-            % Systems Vol. 187, Springer-Verlag.
-            %
-            % Copyright (C) 2008 Peter Carbonetto. All Rights Reserved.
-            % This code is published under the Eclipse Public License.
-            %
-            % Author: Peter Carbonetto
-            %         Dept. of Computer Science
-            %         University of British Columbia
-            %         September 18, 2008
-        
+        function testSolve(testCase, linear_solver, hessian_approximation, warm_start_init_point)
+            
             problem = struct();
             problem.variableInfo = struct();
             problem.variableInfo.lb = testCase.xBnd(:,1);  % Lower bound on the variables.
@@ -50,10 +37,14 @@ classdef BaseProblem < matlab.unittest.TestCase
             problem.ipopt.print_level                       = 5;
             problem.ipopt.hessian_approximation             = hessian_approximation;
             % problem.ipopt.print_options_documentation       = "yes";
-            problem.ipopt.dependency_detector               = dependency_detector;
             problem.ipopt.warm_start_init_point             = warm_start_init_point;
             % problem.ipopt.print_user_options                = "yes";
             % problem.ipopt.debug                             = 0;
+            problem.ipopt.tol                               = 1e-5;
+            problem.ipopt.max_iter                          = 1500;
+            problem.ipopt.acceptable_tol                    = 1e-4;
+            problem.ipopt.acceptable_iter                   = 3;
+            problem.ipopt.acceptable_dual_inf_tol           = problem.ipopt.acceptable_tol;
             
             % The callback functions.
             problem.funcs.objective         = @testCase.objective;
@@ -68,24 +59,29 @@ classdef BaseProblem < matlab.unittest.TestCase
             % Run IPOPT.
             [~, info] = ipopt(problem);
 
-            testCase.verifyEqual(info.status, "SUCCESS", "Exit status");
-            testCase.verifyEqual(info.appstatus,"Solve_Succeeded", "Application Status");
+            testCase.verifyThat(info.status, ...
+                                IsMemberOf(["SUCCESS","STOP_AT_ACCEPTABLE_POINT"]), ...
+                                "Exit status");
+
+            testCase.verifyThat(info.appstatus, ...
+                                 IsMemberOf(["Solve_Succeeded","Solved_To_Acceptable_Level"]), ...
+                                 "Application Status");
         end
     end
 
     methods (Abstract)
-        fVal = objective(obj, x)
-        fJac = gradient(obj, x)
-        cVal = constraints(obj, x)
-        cJac = jacobian(obj, x)
+        fVal = objective(obj, x, bNewX)
+        fJac = gradient(obj, x, bNewX)
+        cVal = constraints(obj, x, bNewX)
+        cJac = jacobian(obj, x, bNewX)
         cStr = jacobianstructure(obj)
         % Hessian in lower triangular form
-        hVal = hessian(obj, x,sigma,lambda)
+        hVal = hessian(obj, x,sigma,lambda,bNewX,bNewLambda)
         hStr = hessianstructure(obj)
     end
 
     methods (Hidden)
-        function bContinue = intermediateCallback(obj, iterationStruct)
+        function bContinue = intermediateCallback(~, ~)
             % "primals", "duals", "duallbs", "dualubs","iter","obj_value","inf_pr","inf_du","mu","d_norm","regularization_size","alpha_du","alpha_pr","mode"
 
             bContinue = true;

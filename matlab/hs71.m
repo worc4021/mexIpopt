@@ -29,22 +29,22 @@ classdef hs71 < BaseProblem
     end
 
   methods
-      function fVal = objective(~, x)
+      function fVal = objective(~, x, ~)
         fVal = x(1)*x(4)*sum(x(1:3)) + x(3);
       end
       % ----------------------------------------------------------------------
-      function g = gradient (~,x)
+      function g = gradient (~,x,~)
         g = [ x(1)*x(4) + x(4)*sum(x(1:3))
               x(1)*x(4)
               x(1)*x(4) + 1
               x(1)*sum(x(1:3)) ]; 
       end
         
-      function c = constraints(~,x)
+      function c = constraints(~,x,~)
         c = [ prod(x); sum(x.^2) ];
       end
       
-      function j = jacobian(~,x)
+      function j = jacobian(~,x,~)
         j = sparse([ prod(x)./x; 2*x ]);
       end
       
@@ -53,7 +53,7 @@ classdef hs71 < BaseProblem
       end
 
       % ----------------------------------------------------------------------
-      function H = hessian (~, x, sigma, lambda)
+      function H = hessian (~, x, sigma, lambda,~,~)
         
         H = sigma*[ 2*x(4)             0      0   0;
                     x(4)               0      0   0;
