@@ -60,10 +60,18 @@ target_link_directories(model_eval_mex PRIVATE ${ipopt_LIBRARY_DIRS})
 message(STATUS "binary path: ${CMAKE_CURRENT_BINARY_DIR}")
 
 include(CTest)
-# matlab_add_unit_test(NAME HS71
-#                      UNITTEST_FILE hs71.m
-#                      ADDITIONAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/matlab $<TARGET_FILE_DIR:ipopt_mex>)
+matlab_add_unit_test(NAME HS71_DirectInterface
+                     UNITTEST_FILE hs71Direct.m
+                     ADDITIONAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/matlab $<TARGET_FILE_DIR:ipopt_mex>)
 
-matlab_add_unit_test(NAME Himmelblau
-                     UNITTEST_FILE Himmelblau.m
+matlab_add_unit_test(NAME HS71_ModelInterface
+                     UNITTEST_FILE hs71Model.m`
+                     ADDITIONAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/matlab $<TARGET_FILE_DIR:ipopt_mex>)
+
+matlab_add_unit_test(NAME Himmelblau_DirectInterface
+                     UNITTEST_FILE HimmelblauDirect.m
+                     ADDITIONAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/matlab $<TARGET_FILE_DIR:ipopt_mex>)
+
+matlab_add_unit_test(NAME Himmelblau_ModelInterface
+                     UNITTEST_FILE HimmelblauModel.m
                      ADDITIONAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/matlab $<TARGET_FILE_DIR:ipopt_mex>)

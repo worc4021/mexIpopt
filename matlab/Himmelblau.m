@@ -1,10 +1,10 @@
-classdef Himmelblau < BaseProblem
+classdef Himmelblau < ProblemData
     methods
         function obj = Himmelblau()
-            obj.x0 = [3; 0];
-            obj.z0 = [1, 1;
-                      1, 1];
-            obj.lambda0 = 1;
+            obj.x0 = [3; 2];
+            obj.z0 = [0, 0;
+                      0, 0];
+            obj.lambda0 = 5;
             obj.cBnd = [-inf,-2];
             obj.xBnd = [-5,5;
                         -5,5];
@@ -16,7 +16,7 @@ classdef Himmelblau < BaseProblem
         fVal = (x.^2+y-11).^2+(x+y.^2-7).^2;
       end
       % ----------------------------------------------------------------------
-      function fJac = gradient (~,var)
+      function fJac = gradient (~,var,~)
         x = var(1);
         y = var(2);
 
@@ -46,8 +46,8 @@ classdef Himmelblau < BaseProblem
         x = var(1);
         y = var(2);
             
-        H = [1200*x^2 - 400*y - 2,-400*x;
-            -400*x,200];
+        H = [12*x^2 + 4*y - 42,4*x + 4*y;
+            4*x + 4*y,12*y^2 + 4*x - 26];
         C = [sin(x), 0;
              0, 0];
         hVal = sparse(tril(sigma*H + lambda(1)*C));

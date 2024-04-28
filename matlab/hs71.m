@@ -1,4 +1,4 @@
-classdef hs71 < BaseProblem
+classdef hs71 < ProblemData
     % Test the "ipopt" Matlab interface on the Hock & Schittkowski test problem
     % #71. See: Willi Hock and Klaus Schittkowski. (1981) Test Examples for
     % Nonlinear Programming Codes. Lecture Notes in Economics and Mathematical
@@ -13,18 +13,18 @@ classdef hs71 < BaseProblem
     %         September 18, 2008
     methods 
         function obj = hs71()
-            obj.x0 = [3; 3; 3; 3];
+            obj.x0 = [1; 5; 3; 1];
             obj.xBnd = [1, 5;
                         1, 5;
                         1, 5;
                         1, 5];
             obj.cBnd = [25, inf;
                         40, 40];
-            obj.z0 = [1, 1;
-                      1, 1;
-                      1, 1;
-                      1, 1];
-            obj.lambda0 = [1;1];
+            obj.z0 = [0, 0;
+                      0, 1;
+                      0, 0;
+                      1, 0];
+            obj.lambda0 = [-1;-1];
         end
     end
 

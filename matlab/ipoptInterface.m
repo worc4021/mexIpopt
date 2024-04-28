@@ -1,4 +1,4 @@
-classdef ipoptInterface < handle
+classdef ipoptInterface < ProblemData
        
     properties (SetAccess = protected)
         fVal (1,1) double       % Objective value
@@ -7,14 +7,6 @@ classdef ipoptInterface < handle
         cVal (:,1) double       % Constraint values
         cJacCur (:,:) double    % Constraint Jacobian
 
-        xCur (:,1) double       % Current decision variable (Initially x0)
-
-        xBnd (:,2) double       % Bounds on decision variable [lb,ub]
-        cBnd (:,2) double       % Bounds on constraints [lb,ub]
-        
-        % Optional
-        zInit (:,2) double      % Initial multipliers for decision variable
-        lambdaInit (:,1) double % Initial multipliers for constraints
         HVal (:,:) double       % Hessian matrix (lower triangular)
     end
 

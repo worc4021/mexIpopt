@@ -52,9 +52,9 @@ The logic is the same, we copy paste the `.lib` files to where the `-lfoo` point
 This part is actually rather straight forward if you got this far. Make sure the submodules are all present. If you have a similar setup with MKL etc you should be able to simply run
 
 ```
-cmake --preset oneApi
-cmake --build --preset oneApi-build
-ctest --preset oneApi-test
+cmake --preset windows-intel-release-config
+cmake --build --preset windows-intel-release-build
+ctest --preset windows-intel-release-test
 ```
 
 As mentioned above, once you have a mex file, it depends on nothing outside your matlab installation. I.e. you can copy it onto any other Matlab installation of compatible Matlab release (i.e. using a later version is fine).
