@@ -282,7 +282,7 @@ public:
         if (cBnd.getDimensions()[0] != nc)
             utilities::error("cBnd is {} x 2, but expected to be {} x 2.", cBnd.getDimensions()[0], nc);
 
-        matlab::data::TypedArray<double> x0 = pullData<double>("xCur");
+        matlab::data::TypedArray<double> x0 = pullData<double>("x0");
         if (x0.getDimensions()[0] != nx)
             utilities::error("xCur is {} x 1, but expected to be {} x 1.", x0.getDimensions()[0], nx);
         
@@ -347,13 +347,13 @@ public:
     {
         if (init_x)
         {
-            matlab::data::TypedArray<double> x0 = pullData<double>("xCur");
+            matlab::data::TypedArray<double> x0 = pullData<double>("x0");
             std::copy(x0.cbegin(), x0.cend(), x);
         }
         
         if (init_z)
         {
-            matlab::data::TypedArray<double> z0 = pullData<double>("zInit");
+            matlab::data::TypedArray<double> z0 = pullData<double>("z0");
             for (Ipopt::Index i = 0; i < n; ++i)
             {
                 z_L[i] = z0[i][0];
@@ -363,7 +363,7 @@ public:
 
         if (init_lambda)
         {
-            matlab::data::TypedArray<double> lambda0 = pullData<double>("lambdaInit");
+            matlab::data::TypedArray<double> lambda0 = pullData<double>("lambda0");
             std::copy(lambda0.cbegin(), lambda0.cend(), lambda);
         }
 
