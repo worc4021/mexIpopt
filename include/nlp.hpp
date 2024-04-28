@@ -256,11 +256,11 @@ nohes:
 
     }
 
-    matlab::data::Array fevalWithX(const matlab::data::Array& handle, bool new_x = true) {
+    matlab::data::Array fevalWithX(const matlab::data::Array& handle) {
         if (diagnosticPrintout)
             stream << "Enter fevalWithX" << std::endl;
 
-        std::vector<matlab::data::Array> retVal = utilities::feval(handle, 1, {_x, factory.createScalar<bool>(new_x)});
+        std::vector<matlab::data::Array> retVal = utilities::feval(handle, 1, {_x});
         if (diagnosticPrintout)
             stream << "Exit fevalWithX" << std::endl;
         return retVal[0];
@@ -415,7 +415,7 @@ nohes:
     if (new_x) 
         updateX(x);
 
-    matlab::data::TypedArray<double> objOut = fevalWithX(funcs[0]["objective"], new_x);
+    matlab::data::TypedArray<double> objOut = fevalWithX(funcs[0]["objective"]);
 
     obj_value = objOut[0];
 
@@ -433,7 +433,7 @@ nohes:
     if (new_x) 
         updateX(x);
 
-    matlab::data::TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"], new_x);
+    matlab::data::TypedArray<double> gradOut = fevalWithX(funcs[0]["gradient"]);
 
     if (gradOut.getNumberOfElements() != _n)
         utilities::error("Size mismatch: gradient callback returned {} elements, whereas {} are expected.", gradOut.getNumberOfElements(), _n);
@@ -455,7 +455,7 @@ nohes:
     if (new_x) 
         updateX(x);
 
-    matlab::data::TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"], new_x);
+    matlab::data::TypedArray<double> constOut = fevalWithX(funcs[0]["constraints"]);
     
     if (constOut.getNumberOfElements() != _m)
         utilities::error("Size mismatch: constraint callback returned {} elements, whereas {} are expected.", constOut.getNumberOfElements(), _m);
@@ -487,7 +487,7 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
         if (new_x) 
             updateX(x);
 
-        matlab::data::SparseArray<double> jVals = fevalWithX(funcs[0]["jacobian"], new_x);
+        matlab::data::SparseArray<double> jVals = fevalWithX(funcs[0]["jacobian"]);
         _jac.updateValues(jVals);
         _jac.val(values);
     }
@@ -522,9 +522,7 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
         std::vector<matlab::data::Array> hessianArgs{
             _x, 
             _sigma,
-            _lambda,
-            factory.createScalar<bool>(new_x),
-            factory.createScalar<bool>(new_lambda)
+            _lambda
         };
 
         std::vector<matlab::data::Array> retVals = utilities::feval(funcs[0]["hessian"], 1, hessianArgs);
