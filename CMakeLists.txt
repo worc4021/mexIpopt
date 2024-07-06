@@ -4,6 +4,17 @@ project(ipopt_mex LANGUAGES CXX)
 
 find_package(Matlab REQUIRED COMPONENTS MAIN_PROGRAM)
 
+option(IPOPT_PREFIX "Path to the IPOPT installation" "")
+if (NOT IPOPT_PREFIX)
+    message(FATAL_ERROR "IPOPT_PREFIX must be set to the path of the IPOPT installation")
+else()
+    if (WIN32)
+        set(ENV{PKG_CONFIG_PATH} "${IPOPT_PREFIX}/lib/pkgconfig;$ENV{PKG_CONFIG_PATH}")
+    else()
+        set(ENV{PKG_CONFIG_PATH} "${IPOPT_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    endif()
+endif()
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(ipopt REQUIRED IMPORTED_TARGET ipopt)
 

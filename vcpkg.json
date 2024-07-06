@@ -2,6 +2,7 @@
     "dependencies": [
         "pkgconf",
         "fmt",
-        "eigen3"
+        "eigen3",
+        "gtest"
     ]
 }

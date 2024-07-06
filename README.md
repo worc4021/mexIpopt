@@ -28,7 +28,7 @@ make install
 
 1. Now, we build the [coinhsl](https://github.com/coin-or-tools/ThirdParty-HSL)/[mumps](https://github.com/coin-or-tools/ThirdParty-Mumps) and which ever else solvers you might have access to. I did not encounter issues with this part, hence a variation of 
 ```
-CC=icx-cl FC=ifx F77=ifx ./configure --prefix=[your/binary/prefix] --enable-msvc --enable-static --disable-shared --with-metis-cflags="-I[your/binary/prefix]/include/coin-or/metis" --with-metis-lflags="[your/binary/prefix]/lib/coinmetis.lib"
+CC=icx-cl FC=ifx F77=ifx ./configure --prefix=[your/binary/prefix] --enable-msvc --enable-static --disable-shared --with-metis-cflags="-I[your/binary/prefix]/include/coin-or/metis" --with-metis-lflags="[your/binary/prefix]/lib/libcoinmetis.lib"
 make -j $(nproc)
 make install
 ```
