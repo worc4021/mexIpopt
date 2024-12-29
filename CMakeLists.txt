@@ -26,10 +26,10 @@ find_package(MKL REQUIRED)
 set(COINIPOPTLIBS)
 if (WIN32)
     set(CMAKE_CXX_FLAGS "/Wall /EHsc")
-    list(APPEND COINIPOPTLIBS libipopt.lib libcoinhsl.lib libcoinmumps.lib libcoinmetis.lib)
+    list(APPEND COINIPOPTLIBS ${ipopt_LIBRARY_DIRS}/ipopt.lib ${ipopt_LIBRARY_DIRS}/coinhsl.lib ${ipopt_LIBRARY_DIRS}/coinmumps.lib ${ipopt_LIBRARY_DIRS}/libcoinmetis.lib)
 else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-    list(APPEND COINIPOPTLIBS libipopt.a libcoinhsl.a libcoinmumps.a libcoinmetis.a)
+    list(APPEND COINIPOPTLIBS ${ipopt_LIBRARY_DIRS}/libipopt.a ${ipopt_LIBRARY_DIRS}/libcoinhsl.a ${ipopt_LIBRARY_DIRS}/libcoinmumps.a ${ipopt_LIBRARY_DIRS}/libcoinmetis.a)
 endif()
 
 add_subdirectory(MexUtilities)
@@ -60,13 +60,16 @@ target_include_directories(ipopt_mex PRIVATE
                             ${CMAKE_CURRENT_SOURCE_DIR}/include
                             ${ipopt_INCLUDE_DIRS})
 
-target_link_directories(ipopt_mex PRIVATE ${ipopt_LIBRARY_DIRS})
+set_target_properties(ipopt_mex PROPERTIES 
+                            POSITION_INDEPENDENT_CODE ON
+                            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 target_include_directories(model_eval_mex PRIVATE 
                             ${CMAKE_CURRENT_SOURCE_DIR}/include
                             ${ipopt_INCLUDE_DIRS})
-
-target_link_directories(model_eval_mex PRIVATE ${ipopt_LIBRARY_DIRS})
+set_target_properties(model_eval_mex PROPERTIES 
+                            POSITION_INDEPENDENT_CODE ON
+                            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")                          
 
 message(STATUS "binary path: ${CMAKE_CURRENT_BINARY_DIR}")
 
