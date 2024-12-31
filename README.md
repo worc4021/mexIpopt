@@ -61,3 +61,33 @@ As mentioned above, once you have a mex file, it depends on nothing outside your
 
 ## Notes:
 - When rebuilding, I found that often I needed to clear the previous build folder if any configuration of upstream libraries changed.
+
+
+## Building with oneApi on linux
+
+It turned out that compiling on linux with the oneApi had a few minor challenges, I used the following:
+
+```
+CC=icx CFLAGS="-std=c90 -fpie" ./configure --prefix=[prefix] --enable-static --disable-shared
+make -j $(nproc)
+make install
+```
+
+again Metis was having issues with the language standard and its undefined symbols. The position independent executable was something needed for the ipopt tests themselves, i.e. for executables.
+
+Subsequently, on linux the `pkg-config` can do most of the heavy lifting, so Mumps and the HSL compile ok with 
+
+```
+CC=icx FC=ifx F77=ifx PKG_CONFIG_PATH=[prefix]/lib/pkgconfig ADD_CFLAGS="-fpie" ADD_FCFLAGS="-fpie" ADD_FFLAGS="-fpie" ./configure --prefix=[prefix] --enable-static --disable-shared
+make -j $(nproc)
+make install
+```
+
+And ultimately the ipopt library itself:
+
+```
+FC=ifx CC=icx CXX=icpx F77=ifx ADD_CFLAGS="-fpie" ADD_CXXFLAGS="-fpie" ADD_FCFLAGS="-fpie" ADD_FFLAGS="-fpie" PKG_CONFIG_PATH=[prefix]/lib/pkgconfig ./configure --prefix=[prefix] --enable-static --disable-shared --disable-linear-solver-loader --disable-java --disable-sipopt
+make -j $(nproc)
+make test
+make install
+```
