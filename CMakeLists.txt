@@ -18,18 +18,17 @@ endif()
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(ipopt REQUIRED IMPORTED_TARGET ipopt)
 
-set(MKL_LINK "static")
-set(MKL_THREADING "sequential")
-set(MKL_INTERFACE_FULL "intel_lp64")
-find_package(MKL REQUIRED)
-
 set(COINIPOPTLIBS)
 if (WIN32)
+    set(MKL_LINK "static")
+    set(MKL_THREADING "sequential")
+    set(MKL_INTERFACE_FULL "intel_lp64")
+    find_package(MKL REQUIRED)
     set(CMAKE_CXX_FLAGS "/Wall /EHsc")
-    list(APPEND COINIPOPTLIBS ${ipopt_LIBRARY_DIRS}/ipopt.lib ${ipopt_LIBRARY_DIRS}/coinhsl.lib ${ipopt_LIBRARY_DIRS}/coinmumps.lib ${ipopt_LIBRARY_DIRS}/libcoinmetis.lib)
+    list(APPEND COINIPOPTLIBS ${ipopt_LIBRARY_DIRS}/ipopt.lib ${ipopt_LIBRARY_DIRS}/coinhsl.lib ${ipopt_LIBRARY_DIRS}/coinmumps.lib ${ipopt_LIBRARY_DIRS}/libcoinmetis.lib MKL::MKL)
 else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-    list(APPEND COINIPOPTLIBS ${ipopt_LIBRARY_DIRS}/libipopt.a ${ipopt_LIBRARY_DIRS}/libcoinhsl.a ${ipopt_LIBRARY_DIRS}/libcoinmumps.a ${ipopt_LIBRARY_DIRS}/libcoinmetis.a)
+    list(APPEND COINIPOPTLIBS PkgConfig::ipopt)
 endif()
 
 add_subdirectory(MexUtilities)
@@ -41,7 +40,6 @@ matlab_add_mex(
     LINK_TO 
         MexUtilities::MexUtilities 
         ${COINIPOPTLIBS}
-        MKL::MKL
     R2018a
 )
 
@@ -52,7 +50,6 @@ matlab_add_mex(
     LINK_TO 
         MexUtilities::MexUtilities 
         ${COINIPOPTLIBS}
-        MKL::MKL
     R2018a
 )
 
