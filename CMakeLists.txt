@@ -27,7 +27,7 @@ if (WIN32)
     set(CMAKE_CXX_FLAGS "/Wall /EHsc")
     list(APPEND COINIPOPTLIBS ${ipopt_LIBRARY_DIRS}/ipopt.lib ${ipopt_LIBRARY_DIRS}/coinhsl.lib ${ipopt_LIBRARY_DIRS}/coinmumps.lib ${ipopt_LIBRARY_DIRS}/libcoinmetis.lib MKL::MKL)
 else()
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -fpie")
     list(APPEND COINIPOPTLIBS PkgConfig::ipopt)
 endif()
 
