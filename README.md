@@ -45,6 +45,8 @@ make install
 
 > The tests will require that you also have the intel runtimes installed, otherwise the build will work but the test might fail.
 
+Note, that if you want to build the debug symbols version you need to use `-MTd` as well as `--enable-debug` for all the configurations above.
+
 # Building the mex
 
 This part is actually rather straight forward if you got this far. Make sure the submodules are all present. If you have a similar setup with MKL etc you should be able to simply run
