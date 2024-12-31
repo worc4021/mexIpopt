@@ -25,27 +25,25 @@ CC=icx-cl CFLAGS="-nologo -Qstd=c89" ADD_CFLAGS=-MT  ./configure --prefix=[your/
 make -j $(nproc)
 make install
 ```
-
+We will use the prefix folder to do most of the heavy lifting for us. Namely the `pkg-config` `.pc` files `autoconfigure` installs for us. Subsequent build steps can read them to configure themselves.
 1. Now, we build the [coinhsl](https://github.com/coin-or-tools/ThirdParty-HSL)/[mumps](https://github.com/coin-or-tools/ThirdParty-Mumps) and which ever else solvers you might have access to. I did not encounter issues with this part, hence a variation of 
 ```
-CC=icx-cl FC=ifx F77=ifx ADD_CFLAGS=-MT ADD_FCFLAGS=-MT ADD_FFLAGS=-MT ./configure --prefix=[your/binary/prefix] --enable-msvc --enable-static --disable-shared --with-metis-cflags="-I[your/binary/prefix]/include/coin-or/metis" --with-metis-lflags="[your/binary/prefix]/lib/libcoinmetis.lib"
+CC=icx-cl FC=ifx F77=ifx ADD_CFLAGS=-MT ADD_FCFLAGS=-MT ADD_FFLAGS=-MT PKG_CONFIG_PATH=[prefix]/lib/pkgconfig ./configure --prefix=[prefix] --enable-msvc --enable-static --disable-shared
 make -j $(nproc)
 make install
 ```
 sets you up for both of them. 
-> Notice, that the installed targets for `pkg-config` don't work satisfactorily (`pkg-config --static ipopt` e.g. returns nothing for me), hence we have to help it out a little. The `CFLAGS` for the solvers are straight forward copy-past of `pkg-config --cflags coinmetis` (or coinmumps, coinhsl etc.). The `LFLAGS` are slightly more manual: Again, call `pkg-config --libs coinmetis` (or whichever) and replace the libraries it wants to link with the absolute path of the `.lib`. 
+> Notice that since we are only building static objects we do not need the linker information from `pkg-config`, we continue to use the windows frontend of icx.
 
-1. Next up, we build the core of ipopt. Very similar stuff, we deactivate all the dynamic loading parts and components we don't need/implement.
+1. Next up, we build the main ipopt. Very similar stuff, we deactivate all the dynamic loading parts and components we don't need/implement, however, to build the tests as well as to detect the available componentns we will need to link against the libraries we have just built. Hence, we require that `-L/c/myprefix` etc makes sense to our compiler, this is not the case for the msvc frontend `icx-cl` hence we switch to `icx` for this.
 
 ```
-FC=ifx CC=icx-cl CXX=icx-cl F77=ifx ADD_CFLAGS=-MT ADD_FCFLAGS=-MT ADD_FFLAGS=-MT ADD_CXXFLAGS=-MT ./configure --prefix=[you/binary/prefix] --enable-static --disable-shared --disable-linear-solver-loader --enable-msvc --disable-java --disable-sipopt --with-hsl-cflags="-I[you/binary/prefix]/include/coin-or/hsl -I[you/binary/prefix]/include/coin-or/metis" --with-hsl-lflags="[you/binary/prefix]/lib/coinhsl.lib [you/binary/prefix]/lib/libcoinmetis.lib /c/PROGRA~2/Intel/oneAPI/mkl/latest/lib/mkl_intel_lp64.lib /c/PROGRA~2/Intel/oneAPI/mkl/latest/lib/mkl_sequential.lib /c/PROGRA~2/Intel/oneAPI/mkl/latest/lib/mkl_core.lib" --with-mumps-cflags="-I[you/binary/prefix]/include/coin-or/mumps -I[you/binary/prefix]/include/coin-or/metis" --with-mumps-lflags="[you/binary/prefix]/lib/coinmumps.lib [you/binary/prefix]/lib/libcoinmetis.lib /c/PROGRA~2/Intel/oneAPI/mkl/latest/lib/mkl_intel_lp64.lib /c/PROGRA~2/Intel/oneAPI/mkl/latest/lib/mkl_sequential.lib /c/PROGRA~2/Intel/oneAPI/mkl/latest/lib/mkl_core.lib"
+FC=ifx CC=icx CXX=icx F77=ifx ADD_CFLAGS=-MT ADD_FCFLAGS=-MT ADD_FFLAGS=-MT ADD_CXXFLAGS=-MT PKG_CONFIG_PATH=[prefix]/lib/pkgconfig ./configure --prefix=[you/binary/prefix] --enable-msvc --enable-static --disable-shared --disable-linear-solver-loader --disable-java --disable-sipopt 
 make -j $(nproc)
 make install
 ```
 
-The logic is the same, we copy paste the `.lib` files to where the `-lfoo` points and pass the `CFLAGS` through.
-
-> Regarding the tests that ipopt ships with: I found that they did not work on mingw despite working fine when executed in powershell directly. You can of course build them `make test` and then try them from windows, but I'd expect them to fail when run by `make` itself.
+> The tests will require that you also have the intel runtimes installed, otherwise the build will work but the test might fail.
 
 # Building the mex
 
