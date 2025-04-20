@@ -341,7 +341,7 @@ public:
         bool init_z,
         Ipopt::Number *z_L,
         Ipopt::Number *z_U,
-        Ipopt::Index m,
+        [[maybe_unused]]Ipopt::Index m,
         bool init_lambda,
         Ipopt::Number *lambda) override
     {
@@ -371,7 +371,7 @@ public:
     }
 
     bool eval_f(
-        Ipopt::Index n,
+        [[maybe_unused]]Ipopt::Index n,
         const Ipopt::Number *x,
         bool new_x,
         Ipopt::Number &obj_value) override
@@ -386,7 +386,7 @@ public:
     }
 
     bool eval_grad_f(
-        Ipopt::Index n,
+        [[maybe_unused]]Ipopt::Index n,
         const Ipopt::Number *x,
         bool new_x,
         Ipopt::Number *grad_f) override
@@ -402,10 +402,10 @@ public:
     }
 
     bool eval_g(
-        Ipopt::Index n,
+        [[maybe_unused]]Ipopt::Index n,
         const Ipopt::Number *x,
         bool new_x,
-        Ipopt::Index m,
+        [[maybe_unused]]Ipopt::Index m,
         Ipopt::Number *g) override
     {
         if (new_x && need_modelcall(x))
@@ -419,11 +419,11 @@ public:
     }
 
     bool eval_jac_g(
-        Ipopt::Index n,
+        [[maybe_unused]]Ipopt::Index n,
         const Ipopt::Number *x,
         bool new_x,
-        Ipopt::Index m,
-        Ipopt::Index nele_jac,
+        [[maybe_unused]]Ipopt::Index m,
+        [[maybe_unused]]Ipopt::Index nele_jac,
         Ipopt::Index *iRow,
         Ipopt::Index *jCol,
         Ipopt::Number *values) override
@@ -444,14 +444,14 @@ public:
     }
 
     bool eval_h(
-        Ipopt::Index n,
-        const Ipopt::Number *x,
+        [[maybe_unused]]Ipopt::Index n,
+        [[maybe_unused]]const Ipopt::Number *x,
         bool new_x,
         Ipopt::Number obj_factor,
-        Ipopt::Index m,
+        [[maybe_unused]]Ipopt::Index m,
         const Ipopt::Number *lambda,
         bool new_lambda,
-        Ipopt::Index nele_hess,
+        [[maybe_unused]]Ipopt::Index nele_hess,
         Ipopt::Index *iRow,
         Ipopt::Index *jCol,
         Ipopt::Number *values) override
@@ -475,16 +475,16 @@ public:
 
     void finalize_solution(
         Ipopt::SolverReturn status,
-        Ipopt::Index n,
+        [[maybe_unused]]Ipopt::Index n,
         const Ipopt::Number *x,
         const Ipopt::Number *z_L,
         const Ipopt::Number *z_U,
-        Ipopt::Index m,
-        const Ipopt::Number *g,
+        [[maybe_unused]]Ipopt::Index m,
+        [[maybe_unused]]const Ipopt::Number *g,
         const Ipopt::Number *lambda,
         Ipopt::Number obj_value,
-        const Ipopt::IpoptData *ip_data,
-        Ipopt::IpoptCalculatedQuantities *ip_cq) override
+        [[maybe_unused]]const Ipopt::IpoptData *ip_data,
+        [[maybe_unused]]Ipopt::IpoptCalculatedQuantities *ip_cq) override
     {
         matlab::data::ArrayFactory factory;
         matlab::data::StructArray _retStruct = factory.createStructArray({ 1, 1 }, 
@@ -510,7 +510,7 @@ public:
     }
 
     bool intermediate_callback(
-        Ipopt::AlgorithmMode mode,
+        [[maybe_unused]]Ipopt::AlgorithmMode mode,
         Ipopt::Index iter,
         Ipopt::Number obj_value,
         Ipopt::Number inf_pr,
