@@ -4,6 +4,9 @@ project(ipopt_mex LANGUAGES CXX)
 
 find_package(Matlab REQUIRED COMPONENTS MAIN_PROGRAM)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 option(IPOPT_PREFIX "Path to the IPOPT installation" "")
 if (NOT IPOPT_PREFIX)
     message(FATAL_ERROR "IPOPT_PREFIX must be set to the path of the IPOPT installation")
@@ -57,16 +60,10 @@ target_include_directories(ipopt_mex PRIVATE
                             ${CMAKE_CURRENT_SOURCE_DIR}/include
                             ${ipopt_INCLUDE_DIRS})
 
-set_target_properties(ipopt_mex PROPERTIES 
-                            POSITION_INDEPENDENT_CODE ON
-                            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 target_include_directories(model_eval_mex PRIVATE 
                             ${CMAKE_CURRENT_SOURCE_DIR}/include
                             ${ipopt_INCLUDE_DIRS})
-set_target_properties(model_eval_mex PROPERTIES 
-                            POSITION_INDEPENDENT_CODE ON
-                            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")                          
 
 message(STATUS "binary path: ${CMAKE_CURRENT_BINARY_DIR}")
 
