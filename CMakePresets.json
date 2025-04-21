@@ -13,7 +13,7 @@
             "installDir": "${sourceDir}/out/install/${presetName}"
         },
         {
-            "name": "windows-conifg-base",
+            "name": "windows-config-base",
             "hidden": true,
             "condition": {
                 "type": "equals",
@@ -28,12 +28,28 @@
             }
         },
         {
-            "name": "linux-conifg-base",
+            "name": "linux-config-base",
             "hidden": true,
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Linux"
+            }
+        },
+        {
+            "name": "linux-config-debug-base",
+            "hidden": true,
+            "cacheVariables": {
+                "IPOPT_PREFIX": "/home/manuel/repos/Ipopt/cacheDbg",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "linux-config-release-base",
+            "hidden": true,
+            "cacheVariables": {
+                "IPOPT_PREFIX": "/home/manuel/repos/Ipopt/cache",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
         },
         {
@@ -59,7 +75,7 @@
         {
             "name": "windows-intel-debug-config",
             "displayName": "Intel oneAPI Debug",
-            "inherits": ["windows-intel-base","windows-conifg-base"],
+            "inherits": ["windows-intel-base","windows-config-base"],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -67,7 +83,7 @@
         {
             "name": "windows-intel-release-config",
             "displayName": "Intel oneAPI Release",
-            "inherits": ["windows-intel-base","windows-conifg-base"],
+            "inherits": ["windows-intel-base","windows-config-base"],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
@@ -75,7 +91,7 @@
         {
             "name": "windows-msvc-debug-config",
             "displayName": "MSVC Debug",
-            "inherits": ["windows-msvc-base","windows-conifg-base"],
+            "inherits": ["windows-msvc-base","windows-config-base"],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -83,7 +99,7 @@
         {
             "name": "windows-msvc-release-config",
             "displayName": "MSVC Release",
-            "inherits": ["windows-msvc-base","windows-conifg-base"],
+            "inherits": ["windows-msvc-base","windows-config-base"],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
@@ -99,20 +115,34 @@
             "hidden": true
         },
         {
+            "name": "ubuntu-intel-base",
+            "inherits": "config-base",
+            "displayName": "Ubuntu Intel base",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "icx",
+                "CMAKE_CXX_COMPILER": "icpx"
+            }
+        },
+        {
             "name": "ubuntu-gcc-release-config",
             "displayName": "Ubuntu GCC Release",
-            "inherits": ["ubuntu-gcc-base","linux-conifg-base"],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
+            "inherits": ["ubuntu-gcc-base","linux-config-base","linux-config-release-base"]
         },
         {
             "name": "ubuntu-gcc-debug-config",
             "displayName": "Ubuntu GCC Debug",
-            "inherits": ["ubuntu-gcc-base","linux-conifg-base"],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            "inherits": ["ubuntu-gcc-base","linux-config-base","linux-config-debug-base"]
+        },
+        {
+            "name": "ubuntu-intel-release-config",
+            "displayName": "Ubuntu Intel Release",
+            "inherits": ["ubuntu-intel-base","linux-config-base","linux-config-release-base"]
+        },
+        {
+            "name": "ubuntu-intel-debug-config",
+            "displayName": "Ubuntu Intel Debug",
+            "inherits": ["ubuntu-intel-base","linux-config-base","linux-config-debug-base"]
         }
     ],
     "buildPresets": [
@@ -169,6 +199,18 @@
             "inherits": "linux-build-base",
             "configurePreset": "ubuntu-gcc-debug-config",
             "displayName": "Ubuntu GCC Debug"
+        },
+        {
+            "name": "ubuntu-intel-release-build",
+            "inherits": "linux-build-base",
+            "configurePreset": "ubuntu-intel-release-config",
+            "displayName": "Ubuntu Intel Release"
+        },
+        {
+            "name": "ubuntu-intel-debug-build",
+            "inherits": "linux-build-base",
+            "configurePreset": "ubuntu-intel-debug-config",
+            "displayName": "Ubuntu Intel Debug"
         }
     ],
     "testPresets": [
