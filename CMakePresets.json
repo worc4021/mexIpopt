@@ -3,28 +3,16 @@
     "configurePresets": [
         {
             "name": "config-base",
-            "generator": "Ninja",
             "hidden": true,
+            "generator": "Ninja",
             "architecture": {
                 "value": "x64",
                 "strategy": "external"
             },
             "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}"
-        },
-        {
-            "name": "windows-config-base",
-            "hidden": true,
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            },
-            "vendor": {
-                "microsoft.com/VisualStudioSettings/CMake/1.0": {
-                    "hostOS": "Windows",
-                    "intelliSenseMode": "windows-msvc-x64"
-                }
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "cacheVariables": {
+                "BUILD_SHARED_LIBS": false
             }
         },
         {
@@ -37,124 +25,68 @@
             }
         },
         {
-            "name": "linux-config-debug-base",
+            "name": "linux-debug-config-base",
+            "inherits": "linux-config-base",
+            "displayName": "Hidden - linux base",
             "hidden": true,
             "cacheVariables": {
-                "IPOPT_PREFIX": "/home/manuel/repos/Ipopt/cacheDbg",
+                "IPOPT_PREFIX": "/build/cache/Debug",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "linux-config-release-base",
+            "name": "linux-release-config-base",
+            "inherits": "linux-config-base",
             "hidden": true,
+            "displayName": "Hidden - linux base",
             "cacheVariables": {
-                "IPOPT_PREFIX": "/home/manuel/repos/Ipopt/cache",
+                "IPOPT_PREFIX": "/build/cache/Release",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
         },
         {
-            "name": "windows-intel-base",
+            "name": "linux-gcc-base",
             "inherits": "config-base",
-            "displayName": "Intel oneAPI base",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "icx-cl",
-                "CMAKE_CXX_COMPILER": "icx-cl"
-            },
-            "hidden": true
-        },
-        {
-            "name": "windows-msvc-base",
-            "inherits": "config-base",
-            "displayName": "MSVC base",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl"
-            },
-            "hidden": true
-        },
-        {
-            "name": "windows-intel-debug-config",
-            "displayName": "Intel oneAPI Debug",
-            "inherits": ["windows-intel-base","windows-config-base"],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "windows-intel-release-config",
-            "displayName": "Intel oneAPI Release",
-            "inherits": ["windows-intel-base","windows-config-base"],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "windows-msvc-debug-config",
-            "displayName": "MSVC Debug",
-            "inherits": ["windows-msvc-base","windows-config-base"],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "windows-msvc-release-config",
-            "displayName": "MSVC Release",
-            "inherits": ["windows-msvc-base","windows-config-base"],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "ubuntu-gcc-base",
-            "inherits": "config-base",
-            "displayName": "Ubuntu GCC base",
+            "displayName": "linux GCC base",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++"
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_Fortran_COMPILER": "gfortran"
             },
             "hidden": true
         },
         {
-            "name": "ubuntu-intel-base",
+            "name": "linux-gcc-release-config",
+            "displayName": "linux GCC Release",
+            "inherits": ["linux-gcc-base","linux-release-config-base"]
+        },
+        {
+            "name": "linux-gcc-debug-config",
+            "displayName": "linux GCC Debug",
+            "inherits": ["linux-gcc-base","linux-debug-config-base"]
+        },
+        {
+            "name": "linux-intel-base",
             "inherits": "config-base",
-            "displayName": "Ubuntu Intel base",
-            "hidden": true,
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "icx",
-                "CMAKE_CXX_COMPILER": "icpx"
-            }
+                "CMAKE_CXX_COMPILER": "icpx",
+                "CMAKE_Fortran_COMPILER": "ifx"
+            },
+            "hidden": true
         },
         {
-            "name": "ubuntu-gcc-release-config",
-            "displayName": "Ubuntu GCC Release",
-            "inherits": ["ubuntu-gcc-base","linux-config-base","linux-config-release-base"]
+            "name": "linux-intel-debug-config",
+            "displayName": "linux Intel Debug",
+            "inherits": ["linux-intel-base","linux-debug-config-base"]
         },
         {
-            "name": "ubuntu-gcc-debug-config",
-            "displayName": "Ubuntu GCC Debug",
-            "inherits": ["ubuntu-gcc-base","linux-config-base","linux-config-debug-base"]
-        },
-        {
-            "name": "ubuntu-intel-release-config",
-            "displayName": "Ubuntu Intel Release",
-            "inherits": ["ubuntu-intel-base","linux-config-base","linux-config-release-base"]
-        },
-        {
-            "name": "ubuntu-intel-debug-config",
-            "displayName": "Ubuntu Intel Debug",
-            "inherits": ["ubuntu-intel-base","linux-config-base","linux-config-debug-base"]
+            "name": "linux-intel-release-config",
+            "displayName": "linux Intel Release",
+            "inherits": ["linux-intel-base","linux-release-config-base"]
         }
     ],
     "buildPresets": [
-        {
-            "name": "windows-build-base",
-            "hidden": true,
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
         {
             "name": "linux-build-base",
             "hidden": true,
@@ -165,52 +97,28 @@
             }
         },
         {
-            "name": "windows-intel-debug-build",
-            "inherits": "windows-build-base",
-            "configurePreset": "windows-intel-debug-config",
-            "displayName": "Intel oneAPI Debug"
-        },
-        {
-            "name": "windows-intel-release-build",
-            "inherits": "windows-build-base",
-            "configurePreset": "windows-intel-release-config",
-            "displayName": "Intel oneAPI Release"            
-        },
-        {
-            "name": "windows-msvc-debug-build",
-            "inherits": "windows-build-base",
-            "configurePreset": "windows-msvc-debug-config",
-            "displayName": "MSVC Debug"
-        },
-        {
-            "name": "windows-msvc-release-build",
-            "inherits": "windows-build-base",
-            "configurePreset": "windows-msvc-release-config",
-            "displayName": "MSVC Release"
-        },
-        {
-            "name": "ubuntu-gcc-release-build",
+            "name": "linux-gcc-release-build",
             "inherits": "linux-build-base",
-            "configurePreset": "ubuntu-gcc-release-config",
-            "displayName": "Ubuntu GCC Release"
+            "configurePreset": "linux-gcc-release-config",
+            "displayName": "linux GCC Release"
         },
         {
-            "name": "ubuntu-gcc-debug-build",
+            "name": "linux-gcc-debug-build",
             "inherits": "linux-build-base",
-            "configurePreset": "ubuntu-gcc-debug-config",
-            "displayName": "Ubuntu GCC Debug"
+            "configurePreset": "linux-gcc-debug-config",
+            "displayName": "linux GCC Debug"
         },
         {
-            "name": "ubuntu-intel-release-build",
+            "name": "linux-intel-debug-build",
             "inherits": "linux-build-base",
-            "configurePreset": "ubuntu-intel-release-config",
-            "displayName": "Ubuntu Intel Release"
+            "configurePreset": "linux-intel-debug-config",
+            "displayName": "linux Intel Debug"
         },
         {
-            "name": "ubuntu-intel-debug-build",
+            "name": "linux-intel-release-build",
             "inherits": "linux-build-base",
-            "configurePreset": "ubuntu-intel-debug-config",
-            "displayName": "Ubuntu Intel Debug"
+            "configurePreset": "linux-intel-release-config",
+            "displayName": "linux Intel Release"
         }
     ],
     "testPresets": [
@@ -224,15 +132,6 @@
             }
         },
         {
-            "name": "test-windows",
-            "hidden": true,
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
             "name" : "test-linux",
             "hidden": true,
             "condition": {
@@ -242,16 +141,28 @@
             }
         },
         {
-            "name": "windows-intel-release-test",
-            "inherits": ["test-base","test-windows"],
-            "configurePreset": "windows-intel-release-config",
-            "displayName": "Intel oneAPI Release"
+            "name": "linux-gcc-release-test",
+            "inherits": ["test-base","test-linux"],
+            "configurePreset": "linux-gcc-release-config",
+            "displayName": "linux GCC Release"
         },
         {
-            "name": "windows-msvc-release-test",
-            "inherits": ["test-base","test-windows"],
-            "configurePreset": "windows-msvc-release-config",
-            "displayName": "MSVC Release"
+            "name": "linux-gcc-debug-test",
+            "inherits": ["test-base","test-linux"],
+            "configurePreset": "linux-gcc-debug-config",
+            "displayName": "linux GCC Debug"
+        },
+        {
+            "name": "linux-intel-release-test",
+            "inherits": ["test-base","test-linux"],
+            "configurePreset": "linux-intel-release-config",
+            "displayName": "linux Intel Release"
+        },
+        {
+            "name": "linux-intel-debug-test",
+            "inherits": ["test-base","test-linux"],
+            "configurePreset": "linux-intel-debug-config",
+            "displayName": "linux Intel Debug"
         }
     ]
 }

@@ -42,9 +42,9 @@ private:
     
 
     void updateX(const Ipopt::Number *x){
-        std::size_t i = 0;
-        for (auto &elem : _x)
-            elem = x[i++];
+        for (std::size_t i = 0; i<_n; ++i) {
+            _x[i] = x[i];
+        }
     }
 
     std::string getStatus(Ipopt::SolverReturn status){
@@ -276,7 +276,6 @@ nohes:
   bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
                     Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style) 
     {
-      // Robustify this process by a huge margin! Hold an internal representation to verify that the dimensions of all passed arguments work for all function handles.
         if (diagnosticPrintout)
             stream << "Enter get_nlp_info" << std::endl;
         index_style = Ipopt::TNLP::C_STYLE;

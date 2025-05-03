@@ -82,17 +82,19 @@ private:
     matlab::data::ArrayFactory factory;
     
     void setSingleOption(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, std::string name, matlab::data::Array& option){
+        bool status{false};
         if (utilities::isnumeric(option)){
             matlab::data::TypedArray<double> opt(std::move(option));
             if (utilities::isscalarinteger(opt)){
-                app->Options()->SetIntegerValue(name, static_cast<int>(opt[0]));
+                status = app->Options()->SetIntegerValue(name, static_cast<int>(opt[0]));
             } else {
-                app->Options()->SetNumericValue(name, opt[0]);
+                status = app->Options()->SetNumericValue(name, opt[0]);
             }
         } else if ( utilities::isstring(option) ) {
-            app->Options()->SetStringValue(name, utilities::getstringvalue(option));
+            status = app->Options()->SetStringValue(name, utilities::getstringvalue(option));
         }
-
+        if (!status)
+            utilities::printf("Failed to set field {}\n", name);
     }
 
     void setOptions(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, const matlab::data::StructArray& opts) {

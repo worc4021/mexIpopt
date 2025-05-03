@@ -1,0 +1,10 @@
+--- /build/cache/Debug/lib/pkgconfig/ipopt.pc   2025-04-27 09:13:52.812946753 +0000
++++ /build/cache/Debug/lib/pkgconfig/ipopt.pc.alt       2025-04-27 09:18:33.169174434 +0000
+@@ -1,5 +1,5 @@
+-prefix=/build/cache
+-#prefix=${pcfiledir}/../..
++#prefix=/build/cache
++prefix=${pcfiledir}/../..
+ exec_prefix=${prefix}
+ libdir=${exec_prefix}/lib
+ includedir=${prefix}/include/coin-or
