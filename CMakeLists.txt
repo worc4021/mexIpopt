@@ -1,5 +1,5 @@
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "Vcpkg toolchain file")
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.25)
 project(ipopt_mex LANGUAGES CXX)
 
 find_package(Matlab REQUIRED COMPONENTS MAIN_PROGRAM)
