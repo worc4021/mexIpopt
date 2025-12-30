@@ -81,18 +81,22 @@ private:
     std::ostream cout;
     matlab::data::ArrayFactory factory;
     
-    void setSingleOption(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, std::string name, matlab::data::Array& option){
+    bool setSingleOption(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, std::string name, matlab::data::Array& option){
         if (utilities::isnumeric(option)){
             matlab::data::TypedArray<double> opt(std::move(option));
             if (utilities::isscalarinteger(opt)){
-                app->Options()->SetIntegerValue(name, static_cast<int>(opt[0]));
+                auto retVal = app->Options()->SetIntegerValue(name, static_cast<int>(opt[0]));
+                if (!retVal) {
+                    retVal = app->Options()->SetNumericValue(name, opt[0]);
+                }
+                return retVal;
             } else {
-                app->Options()->SetNumericValue(name, opt[0]);
+                return app->Options()->SetNumericValue(name, opt[0]);
             }
         } else if ( utilities::isstring(option) ) {
-            app->Options()->SetStringValue(name, utilities::getstringvalue(option));
+            return app->Options()->SetStringValue(name, utilities::getstringvalue(option));
         }
-
+        return false;
     }
 
     void setOptions(Ipopt::SmartPtr<Ipopt::IpoptApplication> app, const matlab::data::StructArray& opts) {
@@ -102,7 +106,8 @@ private:
         for (auto& field : fields){
             fieldName = field;
             curField = opts[0][field];
-            setSingleOption(app, fieldName, curField);
+            if (!setSingleOption(app, fieldName, curField))
+                utilities::warnWithId("UnknownOption","Could not set option '{}'", fieldName);
         }
 
         if (utilities::isfield(opts, "print_level")

@@ -2,6 +2,7 @@
 #include "utilities.hpp"
 #include "sparse.hpp"
 #include "stream.hpp"
+#include "version.h"
 
 #include "IpTNLP.hpp"
 #include "IpIpoptApplication.hpp"
@@ -120,7 +121,7 @@ public:
     myNLP() : _n(0), _m(0), returnHessian(true), intermediateCallback(false), diagnosticPrintout(false),
         funcs(factory.createStructArray({0,0},{})),
         variableInfo(factory.createStructArray({0,0},{})),
-        retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval","appstatus"})), // Make sure the structure is always available
+        retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval","appstatus","build"})), // Make sure the structure is always available
         stream(&buffer), 
         _jac(),_hes(),_x(factory.createArray<double>({0,1})), _sigma(factory.createScalar(1.)),_lambda(factory.createArray<double>({0,1}))
     {
@@ -134,6 +135,10 @@ public:
         retStr[0]["iter"] = factory.createScalar<int>(0);
         retStr[0]["cpu"] = factory.createScalar<double>(0.);
         retStr[0]["objective"] = factory.createScalar<double>(NAN);
+        retStr[0]["build"] = factory.createStructArray({1,1},{"hash","number"});
+        matlab::data::StructArrayRef buildInfo = retStr[0]["build"];
+        buildInfo[0]["hash"] = factory.createScalar(IPOPT_HASH);
+        buildInfo[0]["number"] = factory.createScalar(BUILD_NUMBER);
     }
 
     matlab::data::TypedArray<double> getX(void) {
@@ -320,6 +325,9 @@ nohes:
                 utilities::error("Hessian structure must be {} x {}, passed matrix is {} x {}", _n, _n, _hes.getNumberOfRows(), _hes.getNumberOfColumns());
 
             nnz_h_lag = static_cast<Ipopt::Index>(_hes.getNumberOfNonZeroElements());
+        }
+        else {
+            nnz_h_lag = 0;
         }
         if (diagnosticPrintout)
             stream << "Exit get_nlp_info" << std::endl;

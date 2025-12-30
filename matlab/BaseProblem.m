@@ -1,7 +1,7 @@
-classdef BaseProblem < matlab.unittest.TestCase & ProblemData
+classdef BaseProblem < BaseBinaryFinder & ProblemData
     
     properties (TestParameter)
-        linear_solver = {"ma27", "mumps", "pardisomkl"};
+        linear_solver = {"ma27", "mumps", "pardisomkl","ma57","ma97"};
         hessian_approximation = {"exact","limited-memory"};
         warm_start_init_point = {"no","yes"};
     end
@@ -51,12 +51,12 @@ classdef BaseProblem < matlab.unittest.TestCase & ProblemData
             % Run IPOPT.
             [~, info] = ipopt(problem);
 
-            testCase.verifyThat(info.status, ...
-                                IsMemberOf(["SUCCESS","STOP_AT_ACCEPTABLE_POINT"]), ...
+            testCase.verifyTrue(ismember(info.status, ...
+                                ["SUCCESS","STOP_AT_ACCEPTABLE_POINT"]), ...
                                 "Exit status");
 
-            testCase.verifyThat(info.appstatus, ...
-                                 IsMemberOf(["Solve_Succeeded","Solved_To_Acceptable_Level"]), ...
+            testCase.verifyTrue(ismember(info.appstatus, ...
+                                 ["Solve_Succeeded","Solved_To_Acceptable_Level"]), ...
                                  "Application Status");
         end
     end
