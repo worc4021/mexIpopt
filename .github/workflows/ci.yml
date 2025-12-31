@@ -116,6 +116,7 @@ jobs:
         CC: "icx-cl"
         CFLAGS: "-nologo -Qstd=c89"
         ADD_CFLAGS: "-MT"
+        MSYS2_PATH_TYPE: inherit
     - run: |
         type ${{ github.workspace }}\ThirdParty\Metis\config.log
       if: failure()
