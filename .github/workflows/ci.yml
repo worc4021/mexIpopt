@@ -96,6 +96,7 @@ jobs:
       with:
         repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
+    
     - run: |
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
@@ -105,7 +106,7 @@ jobs:
       name: Build ThirdParty Metis
       working-directory: ${{ github.workspace }}/ThirdParty/Metis
       env:
-        CC: icx-cl
+        CC: "/c/Program Files (x86)/Intel/oneAPI/compiler/latest/bin/icx-cl"
         CFLAGS: "-nologo -Qstd=c89"
         ADD_CFLAGS: "-MT"
     - run: |
