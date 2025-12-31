@@ -75,6 +75,14 @@ jobs:
     runs-on: windows-latest
     continue-on-error: true
     steps:
+    - name: Set up Msys2
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        msystem: UCRT64
+        install: >
+          base-devel 
+          mingw-w64-ucrt-x86_64-toolchain
     - uses: worc4021/oneApi@v8
       with:
         icx: true
@@ -88,14 +96,6 @@ jobs:
       with:
         repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
-    - name: Set up Msys2
-      uses: msys2/setup-msys2@v2
-      with:
-        update: true
-        msystem: UCRT64
-        install: >
-          base-devel 
-          mingw-w64-ucrt-x86_64-toolchain
     - run: |
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
