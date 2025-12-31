@@ -65,13 +65,13 @@ jobs:
   #       report_paths: ${{ github.workspace }}/test-results.xml
 
   windows-build:
-    strategy:
-      matrix:
-        matlabrelease:
-        - R2022b
-        - R2023b
-        - R2024b
-        - R2025b
+    # strategy:
+    #   matrix:
+    #     matlabrelease:
+    #     - R2022b
+    #     - R2023b
+    #     - R2024b
+    #     - R2025b
     runs-on: windows-latest
     continue-on-error: true
     steps:
@@ -82,15 +82,15 @@ jobs:
         platform: x64
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
-    - name: Setup Ninja
-      uses: seanmiddleditch/gha-setup-ninja@master
-    - name: Setup cmake
-      uses: jwlawson/actions-setup-cmake@v2
-      with:
-        cmake-version: 'latest'
+    # - name: Setup Ninja
+    #   uses: seanmiddleditch/gha-setup-ninja@master
+    # - name: Setup cmake
+    #   uses: jwlawson/actions-setup-cmake@v2
+    #   with:
+    #     cmake-version: 'latest'
     - uses: actions/checkout@v6
       with:
-        repository: https://github.com/coin-or-tools/ThirdParty-Metis.git
+        repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
     - run: |
         .get.Metis
