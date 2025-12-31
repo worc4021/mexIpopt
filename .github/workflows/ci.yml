@@ -75,13 +75,15 @@ jobs:
     runs-on: windows-latest
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
+      with:
+        path: ${{ github.workspace }}/mexIpopt
     - name: Set up MinGW
       uses: egor-tensin/setup-mingw@v3
       with:
         platform: x64
-    - name: Setup MSVC
-      uses: ilammy/msvc-dev-cmd@v1
+    # - name: Setup MSVC
+    #   uses: ilammy/msvc-dev-cmd@v1
     # - name: Setup Ninja
     #   uses: seanmiddleditch/gha-setup-ninja@master
     # - name: Setup cmake
@@ -93,7 +95,7 @@ jobs:
         repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
     - run: |
-        .get.Metis
+        ./get.Metis
         ./configure --prefix=${{ github.workspace }}/build --enable-msvc --enable-static --disable-shared
         make -j $(nproc)
         make install
