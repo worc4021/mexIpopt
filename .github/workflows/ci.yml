@@ -97,7 +97,7 @@ jobs:
         repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
     - run: |
-        'C:\Program Files (x86)\Intel\oneAPI\setvars.bat'
+        CALL "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" --force
         msys2 -c './get.Metis; ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared; make -j $(nproc); make install'
       shell: cmd
       name: Build ThirdParty Metis
