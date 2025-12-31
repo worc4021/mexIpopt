@@ -75,6 +75,11 @@ jobs:
     runs-on: windows-latest
     continue-on-error: true
     steps:
+    - uses: worc4021/oneApi@v8
+      with:
+        icx: true
+        ifx: true
+        mkl: true
     - uses: actions/checkout@v6
       with:
         path: ${{ github.workspace }}/mexIpopt
@@ -93,11 +98,6 @@ jobs:
           mingw-w64-ucrt-x86_64-toolchain
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
-    - uses: worc4021/oneApi@v8
-      with:
-        icx: true
-        ifx: true
-        mkl: true
     - run: |
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
