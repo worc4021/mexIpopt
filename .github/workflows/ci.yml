@@ -108,6 +108,10 @@ jobs:
         CC: icx-cl
         CFLAGS: "-nologo -Qstd=c89"
         ADD_CFLAGS: "-MT"
+    - run: |
+        type ${{ github.workspace }}\ThirdParty\Metis\config.log
+      if: failure()
+      name: Show Metis config log
     # - name: Set up MATLAB
     #   uses: matlab-actions/setup-matlab@v2
     #   with:
