@@ -93,7 +93,7 @@ jobs:
           mingw-w64-ucrt-x86_64-toolchain
     - run: |
         ./get.Metis
-        ./configure --prefix=${{ github.workspace }}/build --enable-msvc --enable-static --disable-shared
+        ./configure --prefix=$(cygpath -w ${{ github.workspace }}\build) --enable-msvc --enable-static --disable-shared
         make -j $(nproc)
         make install
       shell: msys2 {0}
