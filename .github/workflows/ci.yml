@@ -102,21 +102,20 @@ jobs:
       name: Show icx path
     - run: |
         env
-      shell: ucrt64 {0}
+      shell: msys2 {0}
       name: Show environment
     - run: |
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
         make -j $(nproc)
         make install
-      shell: ucrt64 {0}
+      shell: msys2 {0}
       name: Build ThirdParty Metis
       working-directory: ${{ github.workspace }}\ThirdParty\Metis
       env:
         CC: "icx-cl"
         CFLAGS: "-nologo -Qstd=c89"
         ADD_CFLAGS: "-MT"
-        MSYS2_PATH_TYPE: inherit
     - run: |
         type ${{ github.workspace }}\ThirdParty\Metis\config.log
       if: failure()
