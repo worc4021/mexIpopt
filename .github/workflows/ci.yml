@@ -97,9 +97,13 @@ jobs:
         repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
     - run: |
-        which icx
-      shell: msys2 {0}
+        where icx
+      shell: cmd
       name: Show icx path
+    - run: |
+        env
+      shell: msys2 {0}
+      name: Show environment
     - run: |
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
