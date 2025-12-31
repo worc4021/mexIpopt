@@ -96,8 +96,6 @@ jobs:
         install: >
           base-devel 
           mingw-w64-ucrt-x86_64-toolchain
-    - name: Setup MSVC
-      uses: ilammy/msvc-dev-cmd@v1
     - run: |
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
