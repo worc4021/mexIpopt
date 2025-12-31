@@ -91,6 +91,13 @@ jobs:
         install: >
           base-devel 
           mingw-w64-ucrt-x86_64-toolchain
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+    - uses: worc4021/oneApi@v8
+      with:
+        icx: true
+        ifx: true
+        mkl: true
     - run: |
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
@@ -99,6 +106,10 @@ jobs:
       shell: msys2 {0}
       name: Build ThirdParty Metis
       working-directory: ${{ github.workspace }}/ThirdParty/Metis
+      env:
+        CC: icx-cl
+        CFLAGS: "-nologo -Qstd=c89"
+        ADD_CFLAGS: "-MT"
     # - name: Set up MATLAB
     #   uses: matlab-actions/setup-matlab@v2
     #   with:
