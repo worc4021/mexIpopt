@@ -82,15 +82,12 @@ jobs:
       uses: egor-tensin/setup-mingw@v3
       with:
         platform: x64
-    # - name: Setup MSVC
-    #   uses: ilammy/msvc-dev-cmd@v1
-    # - name: Setup Ninja
-    #   uses: seanmiddleditch/gha-setup-ninja@master
-    # - name: Setup cmake
-    #   uses: jwlawson/actions-setup-cmake@v2
-    #   with:
-    #     cmake-version: 'latest'
+    - name: Install build tools
+      run: |
+        pacman -Ss --noconfirm --needed base-devel mingw-w64-x86_64-toolchain
+      shell: bash
     - uses: actions/checkout@v6
+      name: Checkout ThirdParty Metis
       with:
         repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
@@ -124,3 +121,12 @@ jobs:
     #   if: success() || failure()
     #   with:
     #     report_paths: ${{ github.workspace }}/test-results.xml
+
+    # - name: Setup MSVC
+    #   uses: ilammy/msvc-dev-cmd@v1
+    # - name: Setup Ninja
+    #   uses: seanmiddleditch/gha-setup-ninja@master
+    # - name: Setup cmake
+    #   uses: jwlawson/actions-setup-cmake@v2
+    #   with:
+    #     cmake-version: 'latest'
