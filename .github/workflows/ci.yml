@@ -97,11 +97,10 @@ jobs:
         repository: coin-or-tools/ThirdParty-Metis
         path: ThirdParty/Metis
     - run: |
-        CALL "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" --force
-      shell: cmd
-      name: Setup oneAPI environment
+        which icx
+      shell: msys2 {0}
+      name: Show icx path
     - run: |
-        cmd //c "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" --force
         ./get.Metis
         ./configure --prefix=$(cygpath "${{ github.workspace }}\build") --enable-msvc --enable-static --disable-shared
         make -j $(nproc)
