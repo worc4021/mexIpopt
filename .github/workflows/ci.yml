@@ -1,0 +1,124 @@
+name: Build
+run-name: ${{ github.actor }} - ${{ github.workflow }} - ${{ github.ref_name }}
+on: 
+  push:
+    branches: 
+    - master
+  pull_request:
+    branches: 
+    - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  id-token: write
+
+jobs:
+  # linux-build:
+  #   strategy:
+  #     matrix:
+  #       matlabrelease:
+  #       - R2022b
+  #       - R2023b
+  #       - R2024b
+  #       - R2025b
+  #   runs-on: ubuntu-24.04
+  #   continue-on-error: true
+  #   steps:
+  #   - name: Checkout repository
+  #     uses: actions/checkout@v4
+  #   - name: Setup Ninja
+  #     uses: seanmiddleditch/gha-setup-ninja@master
+  #   - name: Setup cmake
+  #     uses: jwlawson/actions-setup-cmake@v2
+  #     with:
+  #       cmake-version: 'latest'
+  #   - name: Set up MATLAB
+  #     uses: matlab-actions/setup-matlab@v2
+  #     with:
+  #       release: ${{ matrix.matlabrelease }}
+  #   - name: Fix matlab internals
+  #     run: |
+  #       for f in $(dirname $(dirname $(realpath $(which matlab))))/sys/os/glnxa64/libstdc++.*; do
+  #         echo "Removing $f"
+  #         rm -fv "$f"
+  #       done
+  #       ls -lAh "$(dirname $(dirname $(realpath $(which matlab))))/sys/os/glnxa64/"
+  #   - name: Configure
+  #     run: |
+  #       cmake --preset linux-gcc-release-config -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DNO_MATLAB=OFF
+  #     working-directory: ${{ github.workspace }}
+  #   - name: Build
+  #     run: |
+  #       cmake --build --preset linux-gcc-release-build --target all
+  #     working-directory: ${{ github.workspace }}
+  #   - name: Run tests
+  #     uses: matlab-actions/run-tests@v2
+  #     with:
+  #       source-folder: ${{ github.workspace }}/test/matlab
+  #       test-results-junit: ${{ github.workspace }}/test-results.xml
+  #   - name: Publish Test Report
+  #     uses: mikepenz/action-junit-report@v5
+  #     if: success() || failure()
+  #     with:
+  #       report_paths: ${{ github.workspace }}/test-results.xml
+
+  windows-build:
+    strategy:
+      matrix:
+        matlabrelease:
+        - R2022b
+        - R2023b
+        - R2024b
+        - R2025b
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up MinGW
+      uses: egor-tensin/setup-mingw@v3
+      with:
+        platform: x64
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+    - name: Setup Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: 'latest'
+    - uses: actions/checkout@v6
+      with:
+        repository: https://github.com/coin-or-tools/ThirdParty-Metis.git
+        path: ThirdParty/Metis
+    - run: |
+        .get.Metis
+        ./configure --prefix=${{ github.workspace }}/build --enable-msvc --enable-static --disable-shared
+        make -j $(nproc)
+        make install
+      shell: bash
+      name: Build ThirdParty Metis
+      working-directory: ${{ github.workspace }}/ThirdParty/Metis
+    # - name: Set up MATLAB
+    #   uses: matlab-actions/setup-matlab@v2
+    #   with:
+    #     release: ${{ matrix.matlabrelease }}
+    # - name: Configure
+    #   run: |
+    #     cmake --preset windows-msvc-release-config
+    #   working-directory: ${{ github.workspace }}
+    # - name: Build
+    #   run: |
+    #     cmake --build --preset windows-msvc-release-build --target all
+    #   working-directory: ${{ github.workspace }}
+    # - name: Run tests
+    #   uses: matlab-actions/run-tests@v2
+    #   with:
+    #     source-folder: ${{ github.workspace }}/test/matlab
+    #     test-results-junit: ${{ github.workspace }}/test-results.xml
+    # - name: Publish Test Report
+    #   uses: mikepenz/action-junit-report@v5
+    #   if: success() || failure()
+    #   with:
+    #     report_paths: ${{ github.workspace }}/test-results.xml
