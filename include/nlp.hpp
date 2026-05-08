@@ -121,7 +121,7 @@ public:
     myNLP() : _n(0), _m(0), returnHessian(true), intermediateCallback(false), diagnosticPrintout(false),
         funcs(factory.createStructArray({0,0},{})),
         variableInfo(factory.createStructArray({0,0},{})),
-        retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","objective","eval","appstatus","build"})), // Make sure the structure is always available
+        retStr(factory.createStructArray({1,1}, {"z_L", "z_U", "lambda", "status", "iter","cpu","sys","wall","objective","eval","appstatus","build"})), // Make sure the structure is always available
         stream(&buffer), 
         _jac(),_hes(),_x(factory.createArray<double>({0,1})), _sigma(factory.createScalar(1.)),_lambda(factory.createArray<double>({0,1}))
     {
@@ -134,6 +134,8 @@ public:
         evals[0]["hessian"] = factory.createScalar<int>(0);
         retStr[0]["iter"] = factory.createScalar<int>(0);
         retStr[0]["cpu"] = factory.createScalar<double>(0.);
+        retStr[0]["sys"] = factory.createScalar<double>(0.);
+        retStr[0]["wall"] = factory.createScalar<double>(0.);
         retStr[0]["objective"] = factory.createScalar<double>(NAN);
         retStr[0]["build"] = factory.createStructArray({1,1},{"hash","number"});
         matlab::data::StructArrayRef buildInfo = retStr[0]["build"];
@@ -555,7 +557,7 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
                                 Ipopt::Number regularization_size, 
                                 Ipopt::Number alpha_du, 
                                 Ipopt::Number alpha_pr, 
-                                [[maybe_unused]]Ipopt::Index ls_trials, 
+                                Ipopt::Index ls_trials, 
                                 [[maybe_unused]]const Ipopt::IpoptData* ip_data, 
                                 [[maybe_unused]]Ipopt::IpoptCalculatedQuantities* ip_cq) 
     {
@@ -586,7 +588,8 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
                                 "regularization_size",
                                 "alpha_du",
                                 "alpha_pr",
-                                "mode"
+                                "mode",
+                                "ls_trials"
                             }
                             );
                     
@@ -614,6 +617,7 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
                     passVal[0]["alpha_du"] = factory.createScalar(alpha_du);
                     passVal[0]["alpha_pr"] = factory.createScalar(alpha_pr);
                     passVal[0]["mode"] = factory.createScalar(std::string(mode == Ipopt::AlgorithmMode::RegularMode ? "regular" : "restoration"));
+                    passVal[0]["ls_trials"] = factory.createScalar(static_cast<double>(ls_trials));
 
                     std::vector<matlab::data::Array> intermediateArgs{passVal};
                     std::vector<matlab::data::Array> retVal = utilities::feval(funcs[0]["intermediate"],1, intermediateArgs);

@@ -178,6 +178,8 @@ public:
                 matlab::data::TypedArrayRef<double> objective = info[0]["objective"];
                 matlab::data::TypedArrayRef<double> cpu = info[0]["cpu"];
                 matlab::data::TypedArrayRef<int> iter = info[0]["iter"];
+                matlab::data::TypedArrayRef<double> sys = info[0]["sys"];
+                matlab::data::TypedArrayRef<double> wall = info[0]["wall"];
                 matlab::data::TypedArrayRef<int> objectiveCalls = evals[0]["objective"];
                 matlab::data::TypedArrayRef<int> constraintCalls = evals[0]["constraints"];
                 matlab::data::TypedArrayRef<int> gradientCalls = evals[0]["gradient"];
@@ -186,6 +188,8 @@ public:
                 objective[0] = app->Statistics()->FinalObjective();
                 cpu[0] = app->Statistics()->TotalCpuTime();
                 iter[0] = app->Statistics()->IterationCount();
+                sys[0] = app->Statistics()->TotalSysTime();
+                wall[0] = app->Statistics()->TotalWallclockTime();
                 app->Statistics()->NumberOfEvaluations( objectiveCalls[0],
                                                         constraintCalls[0],
                                                         gradientCalls[0],
