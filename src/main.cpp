@@ -87,6 +87,10 @@ private:
             if (utilities::isscalarinteger(opt)){
                 auto retVal = app->Options()->SetIntegerValue(name, static_cast<int>(opt[0]));
                 if (!retVal) {
+                    app->Jnlst()->Printf(
+                        Ipopt::EJournalLevel::J_WARNING, 
+                        Ipopt::EJournalCategory::J_USER_APPLICATION, 
+                        "Attempted to set '%s' as integer, retrying as floating point.\n", name.c_str());
                     retVal = app->Options()->SetNumericValue(name, opt[0]);
                 }
                 return retVal;
