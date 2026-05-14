@@ -2,6 +2,14 @@
 
 On Linux and on Macos getting an ipopt mexfile is rather straight forward - on Windows a completely different story. Hence, most of this description is to get you going on Windows.
 
+> **Python wheel.** A sibling project at [`../pyIpopt/`](../pyIpopt/README.md)
+> reuses the same static MinGW IPOPT prefix this mex consumes
+> (`C:/repos/Ipopt/build/mingw`) to produce a self-contained
+> `cyipopt-X.Y.Z-cp3xx-cp3xx-win_amd64.whl` via a `uv` project. Colleagues
+> install the wheel with `uv pip install` and don't need MinGW, oneAPI,
+> IPOPT, HSL, or MUMPS on their machine. See section 4.7 of
+> [`../docs/LocalBuild.md`](../docs/LocalBuild.md) for the build steps.
+
 ## Prerequisites 
 
 On Windows, I tested this with the oneAPI compilers through [Mingw64](https://www.mingw-w64.org/). I use `zsh` on mingw, if all this means nothing to you and you have mingw and the icx compiler installed simply make a batch script with 
