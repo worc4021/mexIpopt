@@ -520,7 +520,7 @@ bool eval_jac_g([[maybe_unused]]Ipopt::Index n, const Ipopt::Number* x, bool new
     if (nullptr == values) {
         _hes.iRow(iRow);
         _hes.jCol(jCol);
-        _lambda = factory.createArray<double>({ _hes.getNumberOfColumns(),1});
+        _lambda = factory.createArray<double>({ static_cast<size_t>(m), 1});
     } else {
         if (new_x) 
             updateX(x);
