@@ -88,7 +88,6 @@ TEST_F(IpoptHS071, MA77)
 
 TEST_F(IpoptHS071, MA86)
 {
-   GTEST_SKIP() << "MA86 is needs MPI.";
    IpoptHS071 test;
    test.strOptions["linear_solver"] = "ma86";
    test.TestBody();

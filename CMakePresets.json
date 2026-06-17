@@ -103,6 +103,18 @@
             "hidden": true
         },
         {
+            "name": "gcc-mingw-base",
+            "inherits": ["config-base","windows-config-base"],
+            "displayName": "GCC MinGW base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_Fortran_COMPILER": "gfortran",
+                "IPOPT_PREFIX": "C:/repos/Ipopt/build/mingw"
+            },
+            "hidden": true
+        },
+        {
             "name": "icx-compiler-base",
             "inherits": "config-base",
             "displayName": "Intel oneAPI base",
@@ -153,6 +165,16 @@
             "inherits": ["unix-based-config-base","gcc-15-base","config-debug-base"]
         },
         {
+            "name": "windows-gcc-release-config",
+            "displayName": "MinGw GCC Release",
+            "inherits": ["gcc-mingw-base","config-release-base"]
+        },
+        {
+            "name": "windows-gcc-debug-config",
+            "displayName": "MinGw GCC Debug",
+            "inherits": ["gcc-mingw-base","config-debug-base"]
+        },
+        {
             "name": "intel-release-config",
             "displayName": "Intel Release",
             "inherits": ["icx-compiler-base","unix-based-config-base","config-release-base"]
@@ -193,6 +215,16 @@
             "name": "gcc-15-debug-build",
             "configurePreset": "gcc-15-debug-config",
             "displayName": "GCC 15 Debug"
+        },
+        {
+            "name": "windows-gcc-release-build",
+            "configurePreset": "windows-gcc-release-config",
+            "displayName": "MinGW GCC Release"
+        },
+        {
+            "name": "windows-gcc-debug-build",
+            "configurePreset": "windows-gcc-debug-config",
+            "displayName": "MinGW GCC Debug"
         },
         {
             "name": "intel-release-build",
@@ -238,6 +270,12 @@
             "inherits": "test-base",
             "configurePreset": "intel-release-config",
             "displayName": "Intel Release"
+        },
+        {
+            "name": "windows-gcc-release-test",
+            "inherits": "test-base",
+            "configurePreset": "windows-gcc-release-config",
+            "displayName": "MinGW GCC Release"
         }
     ]
 }

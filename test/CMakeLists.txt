@@ -18,6 +18,13 @@ target_link_libraries(hs071 PRIVATE ${COINIPOPTLIBS} GTest::gtest_main)
 target_include_directories(hs071 PRIVATE include
                                         ${IPOPT_PREFIX}/include/coin-or)
 target_link_directories(hs071 PRIVATE ${IPOPT_PREFIX}/lib)
+if (WIN32 AND (MINGW OR CMAKE_C_COMPILER_ID STREQUAL "GNU"))
+    target_link_options(hs071 PRIVATE
+        -static
+        -static-libgcc
+        -static-libstdc++)
+endif()
+
 
 include(GoogleTest)
 gtest_discover_tests(hs071)
